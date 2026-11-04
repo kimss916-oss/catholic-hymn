@@ -585,6 +585,16 @@ header p{color:#d6eae3 !important;}
 .selected-hymn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:7px;max-height:280px;overflow:auto;}
 .selected-hymn-grid button{background:#fff;color:#15594b;border:1px solid #c8ded3;border-radius:9px;padding:10px 3px;font-size:16px;font-weight:800;cursor:pointer;}
 @media(max-width:390px){.stats-summary-card{padding:10px 3px !important;}.stats-summary-card span{font-size:11px !important;}.stats-summary-card strong{font-size:20px !important;}}
+
+/* V3.23.19: 통계 제목 왼쪽, 기간 요약과 연도 선택 오른쪽 */
+#statsPanel .stats-hero{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;align-items:center !important;justify-content:space-between !important;gap:8px !important;padding:12px 10px !important;}
+#statsPanel .stats-hero > div:first-child{flex:1 1 auto !important;min-width:0 !important;}
+#statsPanel .stats-hero > div:first-child b{font-size:clamp(15px,3.7vw,21px) !important;white-space:nowrap !important;}
+#statsPanel .stats-period-search{display:flex !important;flex:0 0 auto !important;flex-direction:column !important;align-items:flex-end !important;margin:0 !important;text-align:right !important;min-width:0 !important;}
+#statsPanel #statsPeriod{display:block !important;margin:0 0 5px !important;font-size:clamp(11px,2.8vw,14px) !important;line-height:1.2 !important;white-space:nowrap !important;}
+#statsPanel .stats-range{display:flex !important;justify-content:flex-end !important;flex-wrap:nowrap !important;gap:4px !important;}
+#statsPanel .stats-range select{box-sizing:border-box !important;width:clamp(66px,19vw,94px) !important;min-width:0 !important;padding:6px 3px !important;font-size:clamp(12px,3vw,15px) !important;}
+@media(max-width:360px){#statsPanel .stats-hero{padding:10px 7px !important;gap:4px !important;}#statsPanel .stats-range select{width:64px !important;font-size:12px !important;}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
