@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.16-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.17-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -149,7 +149,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .stats-title{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-bottom:10px}.stats-title b{font-size:19px}.stats-title span{font-size:12px;color:#7a8392}
 .stats-ranking{display:grid;gap:7px}
 .rank-row{display:grid;grid-template-columns:42px 72px minmax(0,1fr) 60px;align-items:center;gap:8px;border:0;background:#f7f8fb;border-radius:12px;padding:10px 11px;text-align:left;cursor:pointer;color:#182033}
-.rank-no{font-weight:900;color:#7a8392;text-align:center}.rank-hymn{font-size:19px;font-weight:900}.rank-title{font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank-count{text-align:right;font-size:17px;font-weight:900}
+.rank-no{font-weight:900;color:#7a8392;text-align:center}.rank-hymn{font-size:19px;font-weight:900;text-align:right}.rank-title{font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rank-count{text-align:right;font-size:17px;font-weight:900}
 .stats-history{margin-top:14px;border:1px solid #d9dee7;border-radius:17px;padding:14px;background:#f7f8fb}
 .stats-history-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.stats-history-head b{font-size:19px}.stats-history-head button{border:0;background:#e6e9ee;border-radius:9px;padding:7px 10px;font-weight:800}
 .history-row{display:grid;grid-template-columns:75px 64px 1fr;gap:8px;padding:9px 5px;border-top:1px solid #e3e6eb;align-items:center}.history-row:first-of-type{border-top:0}.history-role{font-weight:900;color:#202a44}.history-liturgy{font-size:14px;color:#5f6876}
@@ -561,6 +561,30 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
  #statsPanel .stats-hero{padding:12px 8px !important;gap:5px !important;}
  #statsPanel .stats-range select{width:68px !important;font-size:12px !important;}
 }
+
+/* V3.23.17: 풍무동성당 통합 PWA 색상 및 통계 정보 배치 */
+header{background:#075c4e !important;color:#fff !important;border-bottom:0 !important;}
+header h1{color:#fff !important;}
+header p{color:#d6eae3 !important;}
+.tabs .tab{background:#dcebe4 !important;color:#15594b !important;}
+.tabs .tab.active{background:#075c4e !important;color:#fff !important;}
+#statsPanel .stats-hero{display:block !important;padding:14px 16px !important;}
+#statsPanel .stats-period-search{display:block !important;text-align:left !important;margin-top:12px !important;}
+#statsPanel #statsPeriod{display:block !important;margin:0 0 7px !important;font-size:14px !important;color:#15594b !important;}
+#statsPanel .stats-range{justify-content:flex-start !important;gap:8px !important;}
+#statsPanel .stats-range select{width:100px !important;font-size:15px !important;}
+.stats-summary-card strong small{font-size:12px;font-weight:700;margin-left:2px;}
+.stats-summary-action{cursor:pointer;font:inherit;width:100%;}
+.stats-summary-action span small{font-size:11px;color:#176452;display:block;margin-top:3px;}
+.stats-summary-action:focus-visible,.selected-hymn-grid button:focus-visible{outline:3px solid #0a755e;outline-offset:2px;}
+.stats-selected-list{border:1px solid #c8ded3;background:#f5faf7;border-radius:16px;padding:14px;margin:0 0 14px;}
+.stats-selected-list[hidden]{display:none !important;}
+.selected-list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.selected-list-head button{border:0;border-radius:8px;padding:7px 11px;background:#dcebe4;color:#15594b;font-weight:800;}
+.stats-selected-list p{font-size:12px;color:#62786e;margin:8px 0 12px;}
+.selected-hymn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:7px;max-height:280px;overflow:auto;}
+.selected-hymn-grid button{background:#fff;color:#15594b;border:1px solid #c8ded3;border-radius:9px;padding:10px 3px;font-size:16px;font-weight:800;cursor:pointer;}
+@media(max-width:390px){.stats-summary-card{padding:10px 3px !important;}.stats-summary-card span{font-size:11px !important;}.stats-summary-card strong{font-size:20px !important;}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -595,7 +619,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
     <button class="month-move" onclick="moveScheduleMonth(1)">다음월 ›</button>
   </div>
   <div id="archiveScheduleBox" style="display:none"></div>
-<div class="hero"><b>2026년 11월 성가표</b><p style="margin-bottom:0;color:#70798a">성가번호를 누르면 해당 악보가 바로 열립니다.</p></div>
+<div class="hero"><b>2026년 11월 성가표</b><p style="margin-bottom:0;color:#70798a">성가번호를 누르면 악보를 볼 수 있습니다.</p></div>
 <div id="todayHighlight"></div>
 <div class="view-filter"><button id="viewAll" class="active" onclick="setMonthView('all')">전체</button><button id="viewSunday" onclick="setMonthView('sunday')">주일</button><button id="viewFuneral" onclick="setMonthView('funeral')">장례</button><button id="viewHolyHour" onclick="setMonthView('holyhour')">성시간</button></div>
 <div id="monthList" class="results"></div>
@@ -606,6 +630,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
     <div><b>성가 사용 통계</b></div>
     <div class="stats-period stats-period-search">
   <span>통계 기간</span>
+  <strong id="statsPeriod">2026년 전체</strong>
   <div class="stats-range">
     <select id="statsStartYear" onchange="applyStatsPeriod()">
       <option value="2025">2025</option>
@@ -617,10 +642,10 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
       <option value="2026" selected>2026</option>
     </select>
   </div>
-  <strong id="statsPeriod">2026년 전체</strong>
 </div>
   </div>
   <div class="stats-summary" id="statsSummary"></div>
+  <div id="statsSelectedList" class="stats-selected-list" hidden></div>
   <div class="stats-filter">
     <button class="active" data-stat="all" onclick="setStatsType('all')">전체</button>
     <button data-stat="entrance" onclick="setStatsType('entrance')">입당</button>
@@ -1029,18 +1054,35 @@ function renderStats(){
   .filter(x=>x.count>0)
   .sort((a,b)=>b.count-a.count||a.n-b.n);
 
- const totalUses=Object.values(data.counts).reduce((a,c)=>a+c.all,0);
- const unique=Object.keys(data.counts).length;
+ const selectedNums=Object.keys(data.counts).map(Number).filter(n=>n>=1&&n<=528).sort((a,b)=>a-b);
+ const unique=selectedNums.length;
+ const unused=528-unique;
+ const percent=(unique/528*100).toFixed(1);
  document.getElementById('statsSummary').innerHTML=`
-   <div class="stats-summary-card"><span>등록 일정</span><strong>${data.rows.length}</strong></div>
-   <div class="stats-summary-card"><span>사용 횟수</span><strong>${totalUses}</strong></div>
-   <div class="stats-summary-card"><span>사용 성가</span><strong>${unique}</strong></div>`;
+   <button type="button" class="stats-summary-card stats-summary-action" onclick="toggleSelectedHymns()" aria-controls="statsSelectedList" aria-expanded="${!document.getElementById('statsSelectedList').hidden}"><span>선곡 성가 <small>목록 보기</small></span><strong>${unique}<small>곡</small></strong></button>
+   <div class="stats-summary-card"><span>미선곡 성가</span><strong>${unused}<small>곡</small></strong></div>
+   <div class="stats-summary-card"><span>성가 선곡률</span><strong>${percent}<small>%</small></strong></div>`;
+ const selectedBox=document.getElementById('statsSelectedList');
+ if(!selectedBox.hidden) renderSelectedHymns(data,selectedNums);
  document.getElementById('statsRankingTitle').textContent=(statsType==='all'?'전체':statRoleLabels[statsType])+' 사용 순위';
  document.getElementById('statsRanking').innerHTML=entries.length?entries.map((x,i)=>{
    const h=hymns[x.n];
    return `<button class="rank-row" onclick="showHymnHistory(${x.n})"><span class="rank-no">${i+1}</span><span class="rank-hymn">${x.n}</span><span class="rank-title">${h?h.title:''}</span><span class="rank-count">${x.count}회</span></button>`;
  }).join(''):'<div style="padding:20px;text-align:center;color:#7a8392">집계할 데이터가 없습니다.</div>';
  document.getElementById('statsHistory').style.display='none';
+}
+function toggleSelectedHymns(){
+ const box=document.getElementById('statsSelectedList');
+ box.hidden=!box.hidden;
+ if(!box.hidden){const data=buildStats();renderSelectedHymns(data,Object.keys(data.counts).map(Number).filter(n=>n>=1&&n<=528).sort((a,b)=>a-b));}
+ const btn=document.querySelector('.stats-summary-action');
+ if(btn)btn.setAttribute('aria-expanded',String(!box.hidden));
+}
+function renderSelectedHymns(data,nums){
+ const box=document.getElementById('statsSelectedList');
+ box.innerHTML=`<div class="selected-list-head"><b>선곡 성가 목록 (${nums.length}곡)</b><button type="button" onclick="toggleSelectedHymns()">닫기</button></div>
+ <p>선택한 기간의 전체 전례 기준입니다. 번호를 누르면 선곡 이력을 볼 수 있습니다.</p>
+ <div class="selected-hymn-grid">${nums.map(n=>`<button type="button" onclick="showHymnHistory(${n})" title="${n}번 선곡 이력">${n}</button>`).join('')}</div>`;
 }
 function setStatsType(type){
  statsType=type;
