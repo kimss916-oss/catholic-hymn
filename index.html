@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.27-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.28-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -652,14 +652,7 @@ header p{color:#d6eae3 !important;}
 #monthList .mass-list-values{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}
 @media(max-width:650px){#monthList .mass-list-card{padding:16px}#monthList .mass-list-row{grid-template-columns:82px minmax(0,1fr);padding:10px 12px;min-height:70px}#monthList .mass-list-row>strong{font-size:14px}}
 
-/* V3.23.25: 가벼운 악보 페이지 넘김 (GPU transform, 원본 이미지/배경 유지) */
-.page-stage{perspective:1100px;}
-.page-stage img{transform-origin:center center;backface-visibility:hidden;will-change:auto;}
-.page-stage img.score-turn-next{animation:scoreTurnNext .26s ease-out both;}
-.page-stage img.score-turn-prev{animation:scoreTurnPrev .26s ease-out both;}
-@keyframes scoreTurnNext{0%{transform:translateX(16px) rotateY(-5deg) scale(.991);filter:drop-shadow(-10px 0 9px rgba(0,0,0,.13));opacity:.83}100%{transform:none;filter:none;opacity:1}}
-@keyframes scoreTurnPrev{0%{transform:translateX(-16px) rotateY(5deg) scale(.991);filter:drop-shadow(10px 0 9px rgba(0,0,0,.13));opacity:.83}100%{transform:none;filter:none;opacity:1}}
-@media(prefers-reduced-motion:reduce){.page-stage img.score-turn-next,.page-stage img.score-turn-prev{animation:none!important}}
+/* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -836,23 +829,12 @@ function getHymnSrc(path){
  // V3.16: 같은 파일명으로 악보가 교체되어도 브라우저/PWA 캐시를 우회
  return assetUrl(path);
 }
-let scoreTurnDirection=0;
-function animateScoreTurn(){
- pageImage.classList.remove('score-turn-next','score-turn-prev');
- if(!scoreTurnDirection)return;
- const cls=scoreTurnDirection>0?'score-turn-next':'score-turn-prev';
- scoreTurnDirection=0;
- void pageImage.offsetWidth;
- pageImage.classList.add(cls);
-}
-pageImage.addEventListener('animationend',()=>pageImage.classList.remove('score-turn-next','score-turn-prev'));
 function renderHymnPage(){
  const h=hymns[current]; if(!h)return;
  currentPage=Math.max(0,Math.min(currentPage,h.pages.length-1));
  imageErrorShown=false; folderHelp.classList.remove('show'); pageImage.style.display='block';
  pageImage.alt=`${current}번 성가 ${currentPage+1}페이지`;
  pageImage.src=getHymnSrc(h.pages[currentPage]);
- animateScoreTurn();
  pageIndicator.textContent=`${currentPage+1} / ${h.pages.length}`;
  vtitle.textContent=`${current}번 ${h.title||''}  ·  ${currentPage+1}/${h.pages.length}`;
 }
@@ -877,7 +859,6 @@ function hymnImageError(img){
 function openHymn(n,page=0,source='search',sequence=null){
  const h=hymns[n]; if(!h)return;
  if(!viewer.classList.contains('open'))returnScrollY=window.scrollY||0;
- scoreTurnDirection=0; pageImage.classList.remove('score-turn-next','score-turn-prev');
  current=n; currentPage=page; viewerSource=source;
  viewerSequence=Array.isArray(sequence)?sequence.map(Number).filter(x=>hymns[x]):[];
  viewerSeqIndex=viewerSequence.indexOf(Number(n));
@@ -903,7 +884,6 @@ function moveHymn(d){
  current=n; currentPage=d<0?hymns[n].pages.length-1:0; renderHymnPage(); hideControls();
 }
 function turnPage(d){
- scoreTurnDirection=d;
  const h=hymns[current]; if(!h)return;
  const p=currentPage+d;
  if(p>=0 && p<h.pages.length){currentPage=p;renderHymnPage();return}
@@ -1263,4 +1243,23 @@ function showToday(){
  renderArchiveMonth();
 }
 renderCategoryButtons();
+
+/* V3.23.29 TEST: 풍무동성당 PWA 공통 내비게이션 연동 */
+function pungMuNotifyFullscreen(){
+  try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen:!!document.fullscreenElement},'*')}catch(e){}
+}
+document.addEventListener('fullscreenchange',pungMuNotifyFullscreen);
+document.addEventListener('webkitfullscreenchange',pungMuNotifyFullscreen);
+window.addEventListener('message',function(event){
+  if(event.data?.type!=='PUNG_MU_NAV')return;
+  // 앱은 독립 실행도 가능하며, 부모에서 탭 요청을 보낸 경우에만 전환
+  if(event.data.tab==='month'){
+    if(viewer.classList.contains('open'))finishBack();
+    showToday();
+  }else if(event.data.tab==='search'){
+    if(viewer.classList.contains('open'))finishBack();
+    showSearch();
+  }
+});
+
 </script></body></html>
