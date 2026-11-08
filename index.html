@@ -744,11 +744,11 @@ header p{color:#d6eae3 !important;}
 /* V3.23.38: unobtrusive version footer on home screens */
 .app-version-footer{padding:22px 12px 28px;text-align:center;font-size:11px;font-weight:400;color:#a3aab3;letter-spacing:.2px;user-select:text}
 /* V3.23.38 TEST: 오늘의 성가 두 버튼 */
-.today-mass-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
-.today-mass-actions button{border:1px solid #075c4e;border-radius:11px;padding:11px 6px;font-size:15px;font-weight:850;color:#075c4e;background:#fff;cursor:pointer}
+.today-mass-actions{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.today-mass-actions button{border:1px solid #075c4e;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:800;color:#075c4e;background:#fff;cursor:pointer}
 .today-mass-actions button.active{background:#075c4e;color:#fff}
 .accomp-notice{padding:12px;border-radius:11px;background:#fff;border:1px solid #c8ded3;color:#425b50;font-size:14px;margin:0 0 12px;line-height:1.6}
-@media(max-width:380px){.today-mass-actions button{font-size:13px;padding:11px 3px}}
+@media(max-width:380px){.today-mass-actions button{font-size:11px;padding:5px 7px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1132,7 +1132,7 @@ function renderTodayHighlight(){
  const now=new Date(); let d=null;
  if(now.getFullYear()===monthlyData.year && now.getMonth()+1===monthlyData.month)d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d){todayHighlight.innerHTML='';return}
- todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions"><button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}</div>${accompMassOpen?'<div class="accomp-notice">반주용 미사곡 악보 목록은 아직 연결되지 않았습니다.</div>':''}`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
+ todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions">${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}<button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>${accompMassOpen?'<div class="accomp-notice">반주용 미사곡 악보 목록은 아직 연결되지 않았습니다.</div>':''}`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
 }
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
