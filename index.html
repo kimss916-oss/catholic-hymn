@@ -657,6 +657,12 @@ header p{color:#d6eae3 !important;}
 .viewer.open:not(.fullscreen-mode) .nav{transform:translateY(0)!important;}
 .viewer.open:not(.fullscreen-mode) .page-indicator{opacity:1!important;}
 .viewer.fullscreen-mode .toolbar,.viewer.fullscreen-mode .nav{transition:transform .22s ease;}
+/* V3.23.30: 기본보기는 컨트롤 영역을 확보하고 전체화면만 악보를 끝까지 확장 */
+.viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage{top:66px!important;bottom:82px!important;}
+.viewer.open.fullscreen-mode .page-stage,.viewer.open:fullscreen .page-stage{top:0!important;bottom:0!important;}
+.viewer.open.fullscreen-mode:not(.controls-show) .page-indicator{opacity:.25;}
+.viewer.open:not(.fullscreen-mode) .toolbar,.viewer.open:not(.fullscreen-mode) .nav{transform:translateY(0)!important;}
+@media(max-width:650px){.viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage{top:62px!important;bottom:76px!important;}}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
@@ -1287,8 +1293,15 @@ function pungMuSwitchTab(tab){
     window.scrollTo({top:pungMuTabScroll[tab]||0,behavior:'instant'});
   }));
 }
+let pungMuNativeFullscreenWasActive=false;
 function pungMuNotifyFullscreen(){
-  if(!document.fullscreenElement && viewer.classList.contains('fullscreen-mode')){viewer.classList.remove('fullscreen-mode');showControls(false);}
+  const nativeActive=!!(document.fullscreenElement || document.webkitFullscreenElement);
+  if(nativeActive) pungMuNativeFullscreenWasActive=true;
+  else if(pungMuNativeFullscreenWasActive){
+    pungMuNativeFullscreenWasActive=false;
+    viewer.classList.remove('fullscreen-mode');
+    showControls(false);
+  }
   syncFullscreenButton();
   try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen:!!document.fullscreenElement},'*')}catch(e){}
 }
