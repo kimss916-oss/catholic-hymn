@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.37-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.40-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -741,8 +741,14 @@ header p{color:#d6eae3 !important;}
 .past-schedule-action button{background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 
-/* V3.23.37: unobtrusive version footer on home screens */
+/* V3.23.38: unobtrusive version footer on home screens */
 .app-version-footer{padding:22px 12px 28px;text-align:center;font-size:11px;font-weight:400;color:#a3aab3;letter-spacing:.2px;user-select:text}
+/* V3.23.38 TEST: 오늘의 성가 두 버튼 */
+.today-mass-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.today-mass-actions button{border:1px solid #075c4e;border-radius:11px;padding:11px 6px;font-size:15px;font-weight:850;color:#075c4e;background:#fff;cursor:pointer}
+.today-mass-actions button.active{background:#075c4e;color:#fff}
+.accomp-notice{padding:12px;border-radius:11px;background:#fff;border:1px solid #c8ded3;color:#425b50;font-size:14px;margin:0 0 12px;line-height:1.6}
+@media(max-width:380px){.today-mass-actions button{font-size:13px;padding:11px 3px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -818,7 +824,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.37</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.40 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1085,7 +1091,22 @@ function openTodayMassHymn(n){
  if(!d||now.getFullYear()!==monthlyData.year||now.getMonth()+1!==monthlyData.month)return;
  openHymn(n,0,'schedule',dayHymnSequence(d,massSongsVisible));
 }
-function toggleMassSongs(){massSongsVisible=!massSongsVisible;renderTodayHighlight()}
+// V3.23.40 TEST: 기본값 거부. 검증된 통합 PWA 세션 연동 전에는 표시하지 않음.
+let accompMassAuthorized=false;
+let accompMassOpen=false;
+// 향후 통합 PWA의 검증된 권한 응답에서만 호출하도록 연결할 함수.
+function applyVerifiedAccompMassPermission(authorized){
+ accompMassAuthorized=(authorized===true);
+ if(!accompMassAuthorized)accompMassOpen=false;
+ renderTodayHighlight();
+}
+function toggleAccompMassSongs(){
+ if(!accompMassAuthorized)return;
+ accompMassOpen=!accompMassOpen;
+ if(accompMassOpen)massSongsVisible=false;
+ renderTodayHighlight();
+}
+function toggleMassSongs(){massSongsVisible=!massSongsVisible;if(massSongsVisible)accompMassOpen=false;renderTodayHighlight()}
 function renderMassDetails(d){
  return `<div class="mass-detail"><div class="mass-info">본당 확정 미사곡 · 화답송 악보는 연결 예정입니다.</div>${massEntriesForDay(d).map(e=>`<div class="mass-detail-row"><b>${e.key}</b><div>${e.scoreType==='PSALM'?'<span class="mass-unavailable">화답송 악보 준비 중 · 페이지 연결 예정</span>':e.numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('')}</div></div>`).join('')}</div>`;
 }
@@ -1111,7 +1132,7 @@ function renderTodayHighlight(){
  const now=new Date(); let d=null;
  if(now.getFullYear()===monthlyData.year && now.getMonth()+1===monthlyData.month)d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d){todayHighlight.innerHTML='';return}
- todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="mass-toggle-row"><button class="mass-toggle-btn ${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
+ todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions"><button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}</div>${accompMassOpen?'<div class="accomp-notice">반주용 미사곡 악보 목록은 아직 연결되지 않았습니다.</div>':''}`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
 }
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
@@ -1426,4 +1447,24 @@ window.addEventListener('message',function(event){
   if(event.data?.type!=='PUNG_MU_NAV')return;
   pungMuSwitchTab(event.data.tab);
 });
-</script></body></html>
+</script>
+<script>
+/* V3.23.40 TEST: 통합 PWA 내부 iframe에서만 권한 응답 수신 */
+(function(){
+ const allowedOrigin='https://script.google.com';
+ const allowedGoogleusercontent='https://script.googleusercontent.com';
+ function requestPermission(){
+   if(window.parent===window)return;
+   window.parent.postMessage({channel:'PUNGMU_ACCOMP_V1',type:'CHECK'},'*');
+ }
+ window.addEventListener('message',function(event){
+   if(event.source!==window.parent)return;
+   if(event.origin!==allowedOrigin && event.origin!==allowedGoogleusercontent && !event.origin.endsWith('.googleusercontent.com'))return;
+   const msg=event.data;
+   if(!msg||msg.channel!=='PUNGMU_ACCOMP_V1'||msg.type!=='RESULT')return;
+   applyVerifiedAccompMassPermission(msg.authorized===true);
+ });
+ window.addEventListener('load',requestPermission);
+})();
+</script>
+</body></html>
