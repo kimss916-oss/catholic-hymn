@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.33-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.37-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -736,7 +736,13 @@ header p{color:#d6eae3 !important;}
   .today-highlight .song-box.today-regular-row > b{font-size:21px!important;}
   .today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:16px!important;}
 }
+/* V3.23.36: 지난 성가표 별도 조회 */
+.past-schedule-action{display:flex;justify-content:flex-end;margin:0 0 12px}
+.past-schedule-action button{background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
+
+/* V3.23.37: unobtrusive version footer on home screens */
+.app-version-footer{padding:22px 12px 28px;text-align:center;font-size:11px;font-weight:400;color:#a3aab3;letter-spacing:.2px;user-select:text}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -771,6 +777,7 @@ header p{color:#d6eae3 !important;}
     <button class="month-move" onclick="moveScheduleMonth(1)">다음월 ›</button>
   </div>
   <div id="archiveScheduleBox" style="display:none"></div>
+<div id="pastScheduleAction" class="past-schedule-action"><button type="button" id="pastScheduleButton" onclick="togglePastSchedule()">지난 성가표 보기</button></div>
 <div class="hero"><b>2026년 11월 성가표</b><p style="margin-bottom:0;color:#70798a">성가번호를 누르면 악보를 볼 수 있습니다.</p></div>
 <div id="todayHighlight"></div>
 <div class="view-filter"><button id="viewAll" class="active" onclick="setMonthView('all')">전체</button><button id="viewSunday" onclick="setMonthView('sunday')">주일</button><button id="viewFuneral" onclick="setMonthView('funeral')">장례</button><button id="viewHolyHour" onclick="setMonthView('holyhour')">성시간</button><button id="viewMass" onclick="setMonthView('mass')">미사곡</button></div>
@@ -811,6 +818,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.37</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1103,7 +1111,7 @@ function renderTodayHighlight(){
  const now=new Date(); let d=null;
  if(now.getFullYear()===monthlyData.year && now.getMonth()+1===monthlyData.month)d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d){todayHighlight.innerHTML='';return}
- todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px">V3.23.35 적용 확인</span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="mass-toggle-row"><button class="mass-toggle-btn ${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
+ todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="mass-toggle-row"><button class="mass-toggle-btn ${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
 }
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
@@ -1136,7 +1144,7 @@ function renderMonthList(){if(monthView==='mass'){renderMassSongList();return;}i
  const now=new Date(); let days=monthlyData.days;
  if(monthView==='today'){days=(now.getFullYear()===monthlyData.year&&now.getMonth()+1===monthlyData.month)?days.filter(d=>d.day===now.getDate()):[]}
  if(monthView==='sunday')days=days.filter(d=>d.weekday==='주일');
- if(monthView==='all'&&now.getFullYear()===monthlyData.year&&now.getMonth()+1===monthlyData.month)days=days.filter(d=>d.day!==now.getDate());
+ if((monthView==='all'||monthView==='sunday')&&now.getFullYear()===monthlyData.year&&now.getMonth()+1===monthlyData.month)days=days.filter(d=>d.day>now.getDate());
  monthList.innerHTML=(days.length?days.map(dayCard).join(''):'<div class="note">해당 날짜의 성가표가 없습니다.</div>')+(monthView==='all'?renderSpecial():'');
 }
 function renderMonth(){renderTodayHighlight();renderMonthList();}
@@ -1168,6 +1176,18 @@ function setMainTab(activeId){
  if(active) active.classList.add('active');
 }
 let scheduleViewYear=2026, scheduleViewMonth=11;
+let showPastCurrentMonth=false;
+function togglePastSchedule(){showPastCurrentMonth=!showPastCurrentMonth;renderArchiveMonth();}
+function pastCurrentMonthRows(){
+ const now=new Date();
+ if(now.getFullYear()!==Number(monthlyData.year)||now.getMonth()+1!==Number(monthlyData.month))return [];
+ return monthlyData.days.filter(d=>d.day<now.getDate());
+}
+function renderPastCurrentMonth(){
+ const rows=pastCurrentMonthRows();
+ const box=document.getElementById("archiveScheduleBox");
+ box.innerHTML=`<div class="archive-month-head"><b>${monthlyData.year}년 ${monthlyData.month}월 지난 성가표</b><span>${rows.length}개 지난 일정</span></div>`+(rows.length?rows.map(d=>`<div class="archive-day"><div class="archive-day-top"><strong>${monthlyData.month}/${d.day} ${d.weekday||""}</strong><span>${d.liturgy||""}</span></div><div class="archive-songs">${["입당","봉헌","성체","파견"].map(k=>`<div class="archive-slot"><small>${k}</small><b>${songText((d.songs&&d.songs[k]||[]).join(","))}</b></div>`).join("")}</div></div>`).join(""):`<div class="archive-empty">지난 성가 일정이 없습니다.</div>`);
+}
 function getMonthPack(y,m){
  if(typeof monthlyData!=='undefined' && Number(monthlyData.year)===y && Number(monthlyData.month)===m) return monthlyData;
  if(typeof monthlyArchive!=='undefined') return monthlyArchive.find(x=>Number(x.year)===y&&Number(x.month)===m)||null;
@@ -1183,9 +1203,14 @@ function renderArchiveMonth(){
  const box=document.getElementById('archiveScheduleBox');
  // 현재 11월은 기존 V3.22의 풍부한 '이달의 성가표' UI를 그대로 보존
  const isCurrent=(typeof monthlyData!=='undefined'&&Number(monthlyData.year)===y&&Number(monthlyData.month)===m);
- const todayChildren=[...document.getElementById('todayPanel').children].filter(el=>!el.classList.contains('month-nav-card')&&el.id!=='archiveScheduleBox');
- todayChildren.forEach(el=>el.style.display=isCurrent?'':'none');
- if(isCurrent){box.style.display='none';return;}
+ const pastAction=document.getElementById("pastScheduleAction");
+ const pastButton=document.getElementById("pastScheduleButton");
+ pastAction.style.display=isCurrent?"flex":"none";
+ if(isCurrent)pastButton.textContent=showPastCurrentMonth?"현재 성가표로 돌아가기":"지난 성가표 보기";
+ const showNormal=isCurrent&&!showPastCurrentMonth;
+ const todayChildren=[...document.getElementById("todayPanel").children].filter(el=>!el.classList.contains("month-nav-card")&&el.id!=="archiveScheduleBox"&&el.id!=="pastScheduleAction");
+ todayChildren.forEach(el=>el.style.display=showNormal?"":"none");
+ if(isCurrent){box.style.display=showPastCurrentMonth?"block":"none";if(showPastCurrentMonth)renderPastCurrentMonth();return;}
  box.style.display='block';
  const pack=getMonthPack(y,m);
  if(!pack){box.innerHTML=`<div class="archive-month-head"><b>${y}년 ${m}월 성가표</b></div><div class="archive-empty">등록된 성가표가 없습니다.</div>`;return;}
@@ -1199,14 +1224,14 @@ function renderArchiveMonth(){
     <div class="archive-slot"><small>파견</small><b>${songText(r.recessional)}</b></div>
    </div></div>`).join('');
 }
-function jumpScheduleMonth(){renderArchiveMonth();}
+function jumpScheduleMonth(){showPastCurrentMonth=false;renderArchiveMonth();}
 function moveScheduleMonth(delta){
  let y=Number(document.getElementById('scheduleYear').value),m=Number(document.getElementById('scheduleMonth').value)+delta;
  if(m<1){m=12;y--} if(m>12){m=1;y++}
  // 현재 보유 범위는 2026년. 향후 다른 연도 데이터가 들어오면 option 자동 추가 가능.
  const ys=document.getElementById('scheduleYear');
  if(![...ys.options].some(o=>Number(o.value)===y)){ return; }
- ys.value=y;document.getElementById('scheduleMonth').value=m;renderArchiveMonth();
+ ys.value=y;document.getElementById('scheduleMonth').value=m;showPastCurrentMonth=false;renderArchiveMonth();
 }
 let statsType='all';
 const statRoleLabels={entrance:'입당',offertory:'봉헌',communion:'성체',recessional:'파견'};
