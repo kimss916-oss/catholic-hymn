@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.32-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.33-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -680,7 +680,7 @@ header p{color:#d6eae3 !important;}
 .today-highlight .song-box.today-regular-row > b{
   width:auto!important;min-width:0!important;max-width:none!important;
   white-space:nowrap!important;word-break:keep-all!important;
-  font-size:clamp(13px,2.8vw,17px)!important;
+  font-size:19px!important;
   letter-spacing:-.45px;
 }
 .today-highlight .song-box.today-mass-row .song-buttons,
@@ -703,8 +703,11 @@ header p{color:#d6eae3 !important;}
     padding:10px 9px!important;
   }
   .today-highlight .song-box.today-mass-row > b,
-  .today-highlight .song-box.today-regular-row > b{font-size:12px!important;letter-spacing:-.65px;}
+  .today-highlight .song-box.today-regular-row > b{font-size:18px!important;letter-spacing:-.35px;}
 }
+/* V3.23.33: 성가명 가독성 회복, 긴 명칭만 선택적으로 축소 */
+.today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:16px!important;letter-spacing:-.6px!important;}
+@media(max-width:380px){.today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:15px!important;}}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
@@ -1065,7 +1068,7 @@ function todayIntegratedSongBoxes(d){
   const buttons=numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');
   const extra=(!mass&&k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
   const pending=mass&&entry.scoreType==='PSALM'?'<span class="mass-unavailable">악보 연결 준비 중</span>':'';
-  return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b>${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>`;
+  return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b class="${mass && k.length>=10?'long-mass-name':''}">${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>`;
  }).join('');
 }
 function renderTodayHighlight(){
