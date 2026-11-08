@@ -708,6 +708,34 @@ header p{color:#d6eae3 !important;}
 /* V3.23.33: 성가명 가독성 회복, 긴 명칭만 선택적으로 축소 */
 .today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:16px!important;letter-spacing:-.6px!important;}
 @media(max-width:380px){.today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:15px!important;}}
+/* V3.23.34: 오늘의 성가 성가명 확실히 확대 (기존 19px -> 23px) */
+.today-highlight .song-box.today-mass-row > b,
+.today-highlight .song-box.today-regular-row > b{
+  font-size:23px!important;
+  font-weight:850!important;
+  line-height:1.25!important;
+  letter-spacing:-.5px!important;
+  white-space:nowrap!important;
+}
+.today-highlight .song-box.today-mass-row > b.long-mass-name{
+  font-size:18px!important;
+  letter-spacing:-.75px!important;
+}
+@media(max-width:650px){
+  .today-highlight .song-box.today-mass-row,
+  .today-highlight .song-box.today-regular-row{
+    grid-template-columns:minmax(0, 55%) minmax(0,1fr)!important;
+    column-gap:10px!important;
+  }
+  .today-highlight .song-box.today-mass-row > b,
+  .today-highlight .song-box.today-regular-row > b{font-size:22px!important;}
+  .today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:17px!important;}
+}
+@media(max-width:380px){
+  .today-highlight .song-box.today-mass-row > b,
+  .today-highlight .song-box.today-regular-row > b{font-size:21px!important;}
+  .today-highlight .song-box.today-mass-row > b.long-mass-name{font-size:16px!important;}
+}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
