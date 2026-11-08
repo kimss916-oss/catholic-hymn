@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.28-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.29-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -652,6 +652,11 @@ header p{color:#d6eae3 !important;}
 #monthList .mass-list-values{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}
 @media(max-width:650px){#monthList .mass-list-card{padding:16px}#monthList .mass-list-row{grid-template-columns:82px minmax(0,1fr);padding:10px 12px;min-height:70px}#monthList .mass-list-row>strong{font-size:14px}}
 
+/* V3.23.29: 기본 보기 컨트롤 고정, 전체화면에서만 자동 숨김 */
+.viewer.open:not(.fullscreen-mode) .toolbar,
+.viewer.open:not(.fullscreen-mode) .nav{transform:translateY(0)!important;}
+.viewer.open:not(.fullscreen-mode) .page-indicator{opacity:1!important;}
+.viewer.fullscreen-mode .toolbar,.viewer.fullscreen-mode .nav{transition:transform .22s ease;}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
@@ -863,21 +868,20 @@ function openHymn(n,page=0,source='search',sequence=null){
  viewerSequence=Array.isArray(sequence)?sequence.map(Number).filter(x=>hymns[x]):[];
  viewerSeqIndex=viewerSequence.indexOf(Number(n));
  home.classList.add('hidden'); viewer.classList.add('open'); viewer.classList.toggle('schedule-mode',viewerSource==='schedule');
- document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; renderHymnPage(); hideControls();
+ document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; renderHymnPage(); showControls(false);
  try{localStorage.setItem('lastHymn',n)}catch(e){}
 }
 function finishBack(){
- viewer.classList.remove('open','controls-show','schedule-mode'); home.classList.remove('hidden'); document.documentElement.style.overflow='';document.body.style.overflow='';
+ viewer.classList.remove('open','controls-show','schedule-mode','fullscreen-mode'); home.classList.remove('hidden'); document.documentElement.style.overflow='';document.body.style.overflow='';
  viewerSequence=[]; viewerSeqIndex=-1; clearTimeout(controlsTimer);
  requestAnimationFrame(()=>{window.scrollTo(0,returnScrollY); requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')))});
 }
 async function back(){
  hideControls();
  if(document.fullscreenElement){
-   try{await document.exitFullscreen();}
-   catch(e){}
-   setTimeout(finishBack,80);
- }else finishBack();
+   try{await document.exitFullscreen();}catch(e){}
+ }
+ finishBack();
 }
 function moveHymn(d){
  let n=current+d; if(n<1)n=528;if(n>528)n=1;
@@ -887,7 +891,6 @@ function turnPage(d){
  const h=hymns[current]; if(!h)return;
  const p=currentPage+d;
  if(p>=0 && p<h.pages.length){currentPage=p;renderHymnPage();return}
- // 성가표에서는 같은 구분(봉헌/성체 등)에 2곡 이상 있을 때만 그 곡들 사이 이동
  if(viewerSource==='schedule'){
    if(viewerSequence.length>1 && viewerSeqIndex>=0){
      const nextIndex=viewerSeqIndex+(d>0?1:-1);
@@ -899,20 +902,40 @@ function turnPage(d){
    }
    currentPage=d>0?h.pages.length-1:0; renderHymnPage(); hideControls(); return;
  }
- // 성가 검색에서만 앞/뒤 성가로 연속 탐색
  moveHymn(d>0?1:-1);
 }
-function full(){
- let e=viewer; if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.(); showControls(true);
+function isHymnFullscreen(){return !!document.fullscreenElement || viewer.classList.contains('fullscreen-mode')}
+function syncFullscreenButton(){
+ const btn=viewer.querySelector('.toolbar button:last-child');
+ if(btn)btn.textContent=isHymnFullscreen()?'전체화면 종료':'전체화면';
+}
+async function full(){
+ if(isHymnFullscreen()){
+   if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}}
+   viewer.classList.remove('fullscreen-mode');
+   showControls(false); syncFullscreenButton();return;
+ }
+ // 임베드/모바일 브라우저가 Fullscreen API를 막아도 뷰어 전용 모드로 동작
+ viewer.classList.add('fullscreen-mode');
+ try{
+   if(typeof viewer.requestFullscreen==='function')await viewer.requestFullscreen();
+   else if(typeof viewer.webkitRequestFullscreen==='function')viewer.webkitRequestFullscreen();
+ }catch(e){console.warn('브라우저 전체화면 제한: 뷰어 모드로 전환',e)}
+ showControls(false);syncFullscreenButton();
 }
 function showControls(force){
- viewer.classList.add('controls-show'); clearTimeout(controlsTimer);
- if(!force || !folderHelp.classList.contains('show'))controlsTimer=setTimeout(()=>viewer.classList.remove('controls-show'),5000);
+ viewer.classList.add('controls-show');clearTimeout(controlsTimer);
+ if(isHymnFullscreen() && (!force || !folderHelp.classList.contains('show'))){
+   controlsTimer=setTimeout(()=>viewer.classList.remove('controls-show'),1000);
+ }
 }
 function hideControls(){
- viewer.classList.remove('controls-show'); clearTimeout(controlsTimer);
+ clearTimeout(controlsTimer);
+ if(isHymnFullscreen())viewer.classList.remove('controls-show');
+ else viewer.classList.add('controls-show');
 }
 function toggleControls(){
+ if(!isHymnFullscreen()){showControls(false);return;}
  if(viewer.classList.contains('controls-show'))hideControls();else showControls(false);
 }
 let pointerDown=false,pointerX=0,pointerY=0,pointerT=0;
@@ -921,7 +944,7 @@ pages.addEventListener('pointermove',e=>{if(!pointerDown)return;const dx=e.clien
 pages.addEventListener('pointerup',e=>{if(!pointerDown)return;pointerDown=false;const dx=e.clientX-pointerX,dy=e.clientY-pointerY,dt=Date.now()-pointerT;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.15&&dt<1200){hideControls();turnPage(dx<0?1:-1);e.preventDefault();return}if(Math.abs(dx)<14&&Math.abs(dy)<14){toggleControls();e.preventDefault()}});
 pages.addEventListener('pointercancel',()=>{pointerDown=false});
 pages.addEventListener('contextmenu',e=>e.preventDefault());
-document.addEventListener('keydown',e=>{if(!viewer.classList.contains('open'))return;if(e.key==='ArrowRight'||e.key==='PageDown')turnPage(1);if(e.key==='ArrowLeft'||e.key==='PageUp')turnPage(-1);if(e.key==='Escape'&&!document.fullscreenElement)back()});
+document.addEventListener('keydown',e=>{if(!viewer.classList.contains('open'))return;if(e.key==='ArrowRight'||e.key==='PageDown')turnPage(1);if(e.key==='ArrowLeft'||e.key==='PageUp')turnPage(-1);if(e.key==='Escape'&&!document.fullscreenElement){if(isHymnFullscreen()){viewer.classList.remove('fullscreen-mode');showControls(false);syncFullscreenButton()}else back()}});
 
 let monthView='all';
 function songBoxes(d){
@@ -1265,6 +1288,8 @@ function pungMuSwitchTab(tab){
   }));
 }
 function pungMuNotifyFullscreen(){
+  if(!document.fullscreenElement && viewer.classList.contains('fullscreen-mode')){viewer.classList.remove('fullscreen-mode');showControls(false);}
+  syncFullscreenButton();
   try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen:!!document.fullscreenElement},'*')}catch(e){}
 }
 document.addEventListener('fullscreenchange',pungMuNotifyFullscreen);
