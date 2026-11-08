@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.29-WEB">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.31-WEB">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -663,6 +663,11 @@ header p{color:#d6eae3 !important;}
 .viewer.open.fullscreen-mode:not(.controls-show) .page-indicator{opacity:.25;}
 .viewer.open:not(.fullscreen-mode) .toolbar,.viewer.open:not(.fullscreen-mode) .nav{transform:translateY(0)!important;}
 @media(max-width:650px){.viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage{top:62px!important;bottom:76px!important;}}
+/* V3.23.31: 오늘의 성가에 미사곡을 전례 순서로 통합 표시 */
+.today-highlight .song-box.today-mass-row{background:#edf7f1!important;border-color:#bcdac9!important;border-left:4px solid #08735b!important}
+.today-highlight .song-box.today-mass-row>b{color:#075c4e!important}
+.today-highlight .song-box.today-regular-row{border-left:4px solid #a7b0bd!important}
+.today-highlight .today-mass-row .mass-unavailable{font-size:13px;line-height:1.4}
 /* V3.23.28: 악보 페이지 넘김 애니메이션 제거 — 즉시 전환 */
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
@@ -740,7 +745,7 @@ header p{color:#d6eae3 !important;}
 </div>
 </section>
 <section id="viewer" class="viewer">
-<div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 돌아가기</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
+<div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
 <div id="folderHelp" class="folder-help"></div>
 <div id="pages" class="page-stage"><img id="pageImage" alt="악보"></div>
 <div id="pageIndicator" class="page-indicator"></div>
@@ -1012,11 +1017,25 @@ function todayMassSongBoxes(d){
  const labels=['입당','봉헌','성체','파견'];
  return labels.map(k=>{const a=(d.songs[k]||[]);const buttons=a.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');const extra=(k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';return `<div class="song-box"><b>${k}</b>${buttons||extra?`<div class="song-buttons">${buttons}${extra}</div>`:'<span class="empty-song">-</span>'}</div>`}).join('');
 }
+function todayIntegratedSongBoxes(d){
+ const massOn=isMassDay(d)&&massSongsVisible;
+ const entries=massOn?massEntriesForDay(d):[];
+ const massKeys=new Set(entries.map(e=>e.key));
+ const order=['입당','자비송','대영광송','화답송','복음환호송','보편지향기도','봉헌','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양','성체','파견'];
+ return order.filter(k=>!massOn?['입당','봉헌','성체','파견'].includes(k):(['입당','봉헌','성체','파견'].includes(k)||massKeys.has(k))).map(k=>{
+  const mass=massKeys.has(k), entry=mass?entries.find(e=>e.key===k):null;
+  const numbers=mass?(entry.numbers||[]):(d.songs[k]||[]);
+  const buttons=numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');
+  const extra=(!mass&&k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
+  const pending=mass&&entry.scoreType==='PSALM'?'<span class="mass-unavailable">악보 연결 준비 중</span>':'';
+  return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b>${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>`;
+ }).join('');
+}
 function renderTodayHighlight(){
  const now=new Date(); let d=null;
  if(now.getFullYear()===monthlyData.year && now.getMonth()+1===monthlyData.month)d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d){todayHighlight.innerHTML='';return}
- todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="mass-toggle-row"><button class="mass-toggle-btn ${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayMassSongBoxes(d)}</div>${isMassDay(d)&&massSongsVisible?renderMassDetails(d):''}</div>`;
+ todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="mass-toggle-row"><button class="mass-toggle-btn ${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
 }
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
