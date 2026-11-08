@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.42-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.43-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -745,10 +745,10 @@ header p{color:#d6eae3 !important;}
 .app-version-footer{padding:22px 12px 28px;text-align:center;font-size:11px;font-weight:400;color:#a3aab3;letter-spacing:.2px;user-select:text}
 /* V3.23.38 TEST: 오늘의 성가 두 버튼 */
 .today-mass-actions{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 12px;flex-wrap:wrap}
-.today-mass-actions button{border:1px solid #075c4e;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:800;color:#075c4e;background:#fff;cursor:pointer}
+.today-mass-actions button{border:1px solid #075c4e;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:800;color:#075c4e;background:#fff;cursor:pointer}
 .today-mass-actions button.active{background:#075c4e;color:#fff}
 .accomp-notice{padding:12px;border-radius:11px;background:#fff;border:1px solid #c8ded3;color:#425b50;font-size:14px;margin:0 0 12px;line-height:1.6}
-@media(max-width:380px){.today-mass-actions button{font-size:11px;padding:5px 7px}}
+@media(max-width:380px){.today-mass-actions button{font-size:12px;padding:7px 9px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -824,7 +824,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.42 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.43 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -928,7 +928,7 @@ function getHymnSrc(path){
  return assetUrl(path);
 }
 function renderHymnPage(){
- const h=hymns[current]; if(!h)return;
+ const h=currentDisplayedHymn(); if(!h)return;
  currentPage=Math.max(0,Math.min(currentPage,h.pages.length-1));
  imageErrorShown=false; folderHelp.classList.remove('show'); pageImage.style.display='block';
  pageImage.alt=`${current}번 성가 ${currentPage+1}페이지`;
@@ -978,10 +978,10 @@ async function back(){
 }
 function moveHymn(d){
  let n=current+d; if(n<1)n=528;if(n>528)n=1;
- current=n; currentPage=d<0?hymns[n].pages.length-1:0; renderHymnPage(); hideControls();
+ current=n; currentPage=d<0?((viewerSource==='schedule'&&accompMassOpen&&accompScoreByNumber[n])||hymns[n]).pages.length-1:0; renderHymnPage(); hideControls();
 }
 function turnPage(d){
- const h=hymns[current]; if(!h)return;
+ const h=currentDisplayedHymn(); if(!h)return;
  const p=currentPage+d;
  if(p>=0 && p<h.pages.length){currentPage=p;renderHymnPage();return}
  if(viewerSource==='schedule'){
@@ -989,7 +989,7 @@ function turnPage(d){
      const nextIndex=viewerSeqIndex+(d>0?1:-1);
      if(nextIndex>=0 && nextIndex<viewerSequence.length){
        viewerSeqIndex=nextIndex; current=viewerSequence[viewerSeqIndex];
-       currentPage=d>0?0:hymns[current].pages.length-1;
+       currentPage=d>0?0:currentDisplayedHymn().pages.length-1;
        renderHymnPage(); hideControls(); return;
      }
    }
@@ -1089,7 +1089,7 @@ function dayHymnSequence(d,withMass){
 function openTodayMassHymn(n){
  const now=new Date(),d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d||now.getFullYear()!==monthlyData.year||now.getMonth()+1!==monthlyData.month)return;
- openHymn(n,0,'schedule',dayHymnSequence(d,massSongsVisible));
+ openHymn(n,0,'schedule',dayHymnSequence(d,massSongsVisible||accompMassOpen));
 }
 // V3.23.40 TEST: 기본값 거부. 검증된 통합 PWA 세션 연동 전에는 표시하지 않음.
 let accompMassAuthorized=false;
@@ -1113,43 +1113,11 @@ const accompanistMassScores=[
  ['389','주님께 나라와 권능과',['389_주님께나라와권능과.webp']],
  ['328','하느님의 어린양',['328_하느님의어린양.webp']]
 ];
-let accompScoreIndex=0,accompScorePage=0;
-function renderAccompMassList(){
- return '<div class="accomp-mass-list">'+accompanistMassScores.map((x,i)=>`<button onclick="openAccompScore(${i})"><b>${x[0]}</b> ${x[1]}${x[2].length>1?' · '+x[2].length+'쪽':''}</button>`).join('')+'</div>';
+// 반주용 악보는 기존 악보 뷰어와 동일한 레이아웃/조작을 사용한다.
+const accompScoreByNumber=Object.fromEntries(accompanistMassScores.map(x=>[Number(x[0]),{title:x[1],pages:x[2].map(f=>'accompanist-mass/'+f)}]));
+function currentDisplayedHymn(){
+ return (viewerSource==='schedule'&&accompMassOpen&&accompMassAuthorized&&accompScoreByNumber[current]) || hymns[current];
 }
-function openAccompScore(i){
- if(!accompMassAuthorized)return;
- accompScoreIndex=i;accompScorePage=0;
- document.getElementById('accompScoreModal').hidden=false;
- document.body.style.overflow='hidden';
- renderAccompScore();
-}
-function renderAccompScore(){
- const x=accompanistMassScores[accompScoreIndex];
- document.getElementById('accompScoreTitle').textContent=x[0]+' '+x[1];
- document.getElementById('accompScoreCounter').textContent=(accompScorePage+1)+' / '+x[2].length+'쪽 · '+(accompScoreIndex+1)+' / '+accompanistMassScores.length+'곡';
- const im=document.getElementById('accompScoreImage');
- im.onerror=()=>{document.getElementById('accompScoreError').hidden=false;};
- document.getElementById('accompScoreError').hidden=true;
- im.src='accompanist-mass/'+encodeURIComponent(x[2][accompScorePage]);
-}
-function moveAccompScore(d){
- let p=accompScorePage+d, i=accompScoreIndex;
- if(p<0){i=(i+accompanistMassScores.length-1)%accompanistMassScores.length;p=accompanistMassScores[i][2].length-1;}
- else if(p>=accompanistMassScores[i][2].length){i=(i+1)%accompanistMassScores.length;p=0;}
- accompScoreIndex=i;accompScorePage=p;renderAccompScore();
-}
-function closeAccompScore(){document.getElementById('accompScoreModal').hidden=true;document.body.style.overflow='';}
-document.addEventListener('keydown',e=>{
- const m=document.getElementById('accompScoreModal');if(!m||m.hidden)return;
- if(e.key==='Escape')closeAccompScore();
- if(e.key==='ArrowLeft'){e.preventDefault();moveAccompScore(-1)}
- if(e.key==='ArrowRight'){e.preventDefault();moveAccompScore(1)}
-});
-let accompTouchX=0;
-document.addEventListener('touchstart',e=>{if(!document.getElementById('accompScoreModal')?.hidden)accompTouchX=e.touches[0].clientX},{passive:true});
-document.addEventListener('touchend',e=>{if(document.getElementById('accompScoreModal')?.hidden)return;const dx=e.changedTouches[0].clientX-accompTouchX;if(Math.abs(dx)>65)moveAccompScore(dx<0?1:-1)},{passive:true});
-
 function toggleAccompMassSongs(){
  if(!accompMassAuthorized)return;
  accompMassOpen=!accompMassOpen;
@@ -1165,7 +1133,7 @@ function todayMassSongBoxes(d){
  return labels.map(k=>{const a=(d.songs[k]||[]);const buttons=a.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');const extra=(k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';return `<div class="song-box"><b>${k}</b>${buttons||extra?`<div class="song-buttons">${buttons}${extra}</div>`:'<span class="empty-song">-</span>'}</div>`}).join('');
 }
 function todayIntegratedSongBoxes(d){
- const massOn=isMassDay(d)&&massSongsVisible;
+ const massOn=isMassDay(d)&&(massSongsVisible||accompMassOpen);
  const entries=massOn?massEntriesForDay(d):[];
  const massKeys=new Set(entries.map(e=>e.key));
  const order=['입당','자비송','대영광송','화답송','복음환호송','보편지향기도','봉헌','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양','성체','파견'];
@@ -1182,7 +1150,7 @@ function renderTodayHighlight(){
  const now=new Date(); let d=null;
  if(now.getFullYear()===monthlyData.year && now.getMonth()+1===monthlyData.month)d=monthlyData.days.find(x=>x.day===now.getDate());
  if(!d){todayHighlight.innerHTML='';return}
- todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions">${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}<button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>${accompMassOpen?renderAccompMassList():''}`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
+ todayHighlight.innerHTML=`<div class="today-highlight"><h3>오늘의 성가 · 11/${d.day} ${d.weekday}</h3><span style="display:inline-block;background:#075c4e;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;margin:0 0 8px"></span><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions">${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}<button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
 }
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
@@ -1518,21 +1486,6 @@ window.addEventListener('message',function(event){
 })();
 </script>
 <style>
-.accomp-mass-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:4px 0 12px}
-.accomp-mass-list button{background:#fff;border:1px solid #d7e4df;color:#174c40;border-radius:7px;text-align:left;font-size:13px;padding:10px 8px;cursor:pointer}
-.accomp-mass-list button b{color:#075c4e}
-#accompScoreModal[hidden]{display:none!important}
-#accompScoreModal{position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column}
-.accomp-score-top,.accomp-score-bottom{display:flex;align-items:center;gap:8px;padding:10px;background:#fff;border-bottom:1px solid #ddd}
-.accomp-score-top strong{flex:1;font-size:15px;text-align:center}
-.accomp-score-top button,.accomp-score-bottom button{background:#075c4e;color:white;border:0;border-radius:6px;padding:10px 13px;cursor:pointer}
-.accomp-score-bottom{border-top:1px solid #ddd;border-bottom:0;justify-content:space-between}
-.accomp-score-scroll{flex:1;min-height:0;overflow:auto;text-align:center;background:white}
-#accompScoreImage{display:block;width:100%;height:auto;max-width:1500px;margin:auto}
 </style>
-<div id="accompScoreModal" hidden role="dialog" aria-modal="true" aria-label="반주용 미사곡 악보">
- <div class="accomp-score-top"><button onclick="closeAccompScore()">‹ 목록</button><strong id="accompScoreTitle"></strong></div>
- <div class="accomp-score-scroll"><img id="accompScoreImage" alt="반주용 미사곡 악보"><p id="accompScoreError" hidden>이미지를 불러오지 못했습니다. GitHub 파일명과 폴더 경로를 확인해 주세요.</p></div>
- <div class="accomp-score-bottom"><button onclick="moveAccompScore(-1)">◀ 이전</button><span id="accompScoreCounter"></span><button onclick="moveAccompScore(1)">다음 ▶</button></div>
-</div>
+
 </body></html>
