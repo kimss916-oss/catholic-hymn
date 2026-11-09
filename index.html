@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.56-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.58-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -788,6 +788,20 @@ header p{color:#d6eae3 !important;}
 .psalm-map-admin .map-row input{margin-top:2px;width:18px;height:18px;flex:0 0 auto}
 .psalm-map-admin .map-row span{flex:1}.psalm-map-admin .map-result{font-size:12px;font-weight:700;color:#47705b}
 .psalm-map-admin .map-manual{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.psalm-map-admin .map-manual input{min-width:180px;flex:1 1 210px;border:1px solid #c6d7ce;border-radius:8px;padding:8px;font-size:12px}.psalm-map-admin .map-manual button{font-size:11px;min-height:32px;padding:5px 8px}.psalm-map-admin .map-summary{font-size:13px;white-space:pre-line;line-height:1.65;margin-top:8px}
+
+/* V3.23.57: local-only responsorial psalm WebP preparation */
+.psalm-convert{margin:12px 0 16px;border:1px solid #b8d7c8;border-radius:14px;padding:14px;background:#fff}
+.psalm-convert h4{font-size:16px;margin:0 0 8px;color:#075c4e}.psalm-convert p{font-size:12px;color:#60766b;line-height:1.55;margin:6px 0 10px}
+.psalm-convert label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}
+.psalm-convert input[type=file],.psalm-convert input[type=text],.psalm-convert select{max-width:100%;width:100%;padding:9px;border:1px solid #cbded2;border-radius:9px;background:#fff;color:#24372e}
+.psalm-convert .convert-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.psalm-convert .convert-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.psalm-convert .convert-page{border:1px solid #d8e5de;border-radius:11px;padding:9px;min-width:0}
+.psalm-convert .convert-page img{width:100%;height:auto;max-height:290px;object-fit:contain;background:#fff;border:1px solid #edf1ee}
+.psalm-convert .convert-page strong{display:block;font-size:12px;overflow-wrap:anywhere;margin:6px 0}
+.psalm-convert .convert-page a{display:inline-block;text-decoration:none;background:#075c4e;color:#fff;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:800}
+.psalm-convert #psalmConvertStatus{white-space:pre-line;line-height:1.5;font-size:13px;margin-top:10px}
+@media(max-width:500px){.psalm-convert .convert-controls{grid-template-columns:1fr}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -864,7 +878,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.56 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.58 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1175,8 +1189,8 @@ function psalmRemoteNotice(){
 function psalmEscape(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function openPsalmMapAdmin(){
  const mount=document.getElementById('psalmMapAdminMount');if(!mount)return;
- mount.innerHTML=`<div class="psalm-map-admin"><h3>화답송 자동 매핑 · ${monthlyData.year}년 ${monthlyData.month}월</h3><p>성가표에 등록된 주일 ${PSALM_MAP_CANDIDATES.length}건을 자동 추출했습니다. 체크 해제는 이번 실행에서만 제외합니다. 공통 매핑은 Google Sheets에서 읽어옵니다. 경로 저장은 통합 PWA에서 개별 반주용 미사곡 권한을 받은 회원만 가능합니다. 독립 실행 시 저장할 수 없습니다.</p><p id="psalmRemoteNotice" aria-live="polite"></p><div id="psalmMapRows"></div><div class="map-actions"><button onclick="psalmMapSelectAll(true)">전체 선택</button><button onclick="psalmMapSelectAll(false)">전체 해제</button><button class="map-primary" onclick="runPsalmMapTest()">선택 항목 매핑 실행</button><button onclick="closePsalmMapAdmin()">닫기</button></div><div id="psalmMapSummary" class="map-summary" aria-live="polite"></div></div>`;
- renderPsalmMapRows();psalmRemoteNotice();
+ mount.innerHTML=`<div class="psalm-map-admin"><h3>화답송 자동 매핑 · ${monthlyData.year}년 ${monthlyData.month}월</h3><p>성가표에 등록된 주일 ${PSALM_MAP_CANDIDATES.length}건을 자동 추출했습니다. 체크 해제는 이번 실행에서만 제외합니다. 공통 매핑은 Google Sheets에서 읽어옵니다. 경로 저장은 통합 PWA에서 개별 반주용 미사곡 권한을 받은 회원만 가능합니다. 독립 실행 시 저장할 수 없습니다.</p><p id="psalmRemoteNotice" aria-live="polite"></p><div id="psalmMapRows"></div><div id="psalmConvertMount"></div><div class="map-actions"><button onclick="psalmMapSelectAll(true)">전체 선택</button><button onclick="psalmMapSelectAll(false)">전체 해제</button><button class="map-primary" onclick="runPsalmMapTest()">선택 항목 매핑 실행</button><button onclick="closePsalmMapAdmin()">닫기</button></div><div id="psalmMapSummary" class="map-summary" aria-live="polite"></div></div>`;
+ renderPsalmMapRows();psalmRemoteNotice();psalmConvertMount();
 }
 function closePsalmMapAdmin(){const e=document.getElementById('psalmMapAdminMount');if(e)e.innerHTML='';}
 function psalmMapSelectAll(v){PSALM_MAP_CANDIDATES.forEach(x=>psalmMapSelections[x.date]=v);renderPsalmMapRows();}
@@ -1274,6 +1288,111 @@ async function runPsalmMapTest(){
  if(out)out.textContent=`선택 ${selected.length}건 / 제외 ${PSALM_MAP_CANDIDATES.length-selected.length}건\n${Object.entries(psalmMapResults).map(([date,status])=>date.slice(5)+' : '+status).join('\n')}\n※ 원본 성가표·미사곡 번호·서버 데이터는 변경하지 않았습니다.`;
 }
 
+
+/* V3.23.57: Browser-only converter. Does not upload or save a mapping. */
+let psalmConvertUrls=[];
+let psalmUploadItems=[];
+let psalmGhPending=new Map();
+function psalmConvertClear(){for(const url of psalmConvertUrls)URL.revokeObjectURL(url);psalmConvertUrls=[];}
+function psalmConvertMount(){
+ const root=document.getElementById('psalmConvertMount');if(!root)return;
+ root.innerHTML=`<div class="psalm-convert"><h4>화답송 악보 WebP 변환 · GitHub 업로드 (V3.23.58 시험)</h4>
+ <p>PDF의 모든 페이지 또는 JPG·PNG 이미지를 WebP로 변환합니다. 변환은 기기에서 처리하며, 업로드 버튼을 누를 때만 WebP 파일을 통합 PWA를 통해 GitHub로 전송합니다. Google Sheets 자동 매핑은 다음 단계에서 연결합니다.</p>
+ <label for="psalmConvertFile">악보 파일 선택</label><input id="psalmConvertFile" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="psalmConvertReset()">
+ <label for="psalmConvertName">전례명 / 파일명 (확장자 제외)</label><input id="psalmConvertName" type="text" placeholder="예: 연중 제33주일_가해" maxlength="100">
+ <div class="convert-controls"><div><label for="psalmConvertFolder">GitHub 저장 예정 폴더</label><select id="psalmConvertFolder"><option value="year-a">가해 (year-a)</option><option value="year-b">나해 (year-b)</option><option value="year-c">다해 (year-c)</option><option value="common">공통 (common)</option></select></div>
+ <div><label for="psalmConvertQuality">WebP 화질</label><select id="psalmConvertQuality"><option value="0.95">고화질 (95%)</option><option value="0.98">최고화질 (98%)</option><option value="0.90">균형 (90%)</option></select></div></div>
+ <div class="map-actions"><button class="map-primary" type="button" id="psalmConvertStart" onclick="psalmConvertRun()">WebP 변환 및 미리보기</button><button type="button" onclick="psalmConvertReset(true)">변환 결과 지우기</button></div>
+ <div id="psalmConvertStatus" role="status" aria-live="polite"></div><div id="psalmConvertPreview" class="convert-preview"></div></div>`;
+}
+function psalmConvertReset(clearInput=false){psalmUploadItems=[];psalmConvertClear();const p=document.getElementById('psalmConvertPreview');if(p)p.replaceChildren();const t=document.getElementById('psalmConvertStatus');if(t)t.textContent='';if(clearInput){const f=document.getElementById('psalmConvertFile');if(f)f.value='';}}
+function psalmConvertFilename(v){return String(v||'').trim().replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/\s+/g,' ').replace(/^\.+|\.+$/g,'').slice(0,90);}
+function psalmConvertCanvasToBlob(canvas,q){return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('WebP 인코딩을 지원하지 않습니다.')), 'image/webp',q));}
+function psalmConvertImage(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file);const im=new Image();im.onload=()=>{URL.revokeObjectURL(url);resolve(im);};im.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('이미지를 읽을 수 없습니다.'));};im.src=url;});}
+async function psalmConvertLoadPdf(){
+ if(window.pdfjsLib)return window.pdfjsLib;
+ const url='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+ await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error('PDF 변환 라이브러리를 불러올 수 없습니다. 인터넷 연결을 확인하세요.'));document.head.appendChild(script);});
+ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';return window.pdfjsLib;
+}
+async function psalmConvertRun(){
+ const file=document.getElementById('psalmConvertFile')?.files?.[0];const name=psalmConvertFilename(document.getElementById('psalmConvertName')?.value||file?.name?.replace(/\.[^.]+$/,''));
+ const folder=document.getElementById('psalmConvertFolder')?.value;const quality=Number(document.getElementById('psalmConvertQuality')?.value||.95);
+ const status=document.getElementById('psalmConvertStatus'),preview=document.getElementById('psalmConvertPreview'),button=document.getElementById('psalmConvertStart');
+ if(!file){alert('PDF 또는 JPG·PNG 파일을 선택해 주세요.');return;}
+ if(!name){alert('파일명을 입력해 주세요.');return;}
+ if(file.size>40*1024*1024){alert('40MB 이하 파일을 선택해 주세요.');return;}
+ if(!['year-a','year-b','year-c','common'].includes(folder))return;
+ psalmConvertReset();button.disabled=true;status.textContent='파일을 읽고 있습니다…';
+ try{
+  const pdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
+  const supported=pdf||/\.(jpe?g|png)$/i.test(file.name)||['image/jpeg','image/png'].includes(file.type);
+  if(!supported)throw new Error('PDF, JPG, PNG 파일만 지원합니다.');
+  let count=1,documentPdf=null,image=null;
+  if(pdf){const lib=await psalmConvertLoadPdf();documentPdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;count=documentPdf.numPages;}
+  else image=await psalmConvertImage(file);
+  if(count>30)throw new Error('한 번에 최대 30페이지까지 변환할 수 있습니다.');
+  for(let i=1;i<=count;i++){
+   status.textContent=`WebP 변환 중… ${i} / ${count}페이지`;
+   const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas 생성 실패');
+   if(documentPdf){const page=await documentPdf.getPage(i);const raw=page.getViewport({scale:1});const scale=Math.min(2.5,2600/Math.max(raw.width,raw.height));const viewport=page.getViewport({scale});canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);await page.render({canvasContext:ctx,viewport}).promise;page.cleanup();}
+   else {const max=3000;const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);}
+   const blob=await psalmConvertCanvasToBlob(canvas,quality);const filename=name+(count>1?'_'+i:'')+'.webp';const objectUrl=URL.createObjectURL(blob);psalmConvertUrls.push(objectUrl);
+   const card=document.createElement('div');card.className='convert-page';const img=document.createElement('img');img.src=objectUrl;img.alt=`변환 미리보기 ${i}페이지`;const title=document.createElement('strong');title.textContent=filename+' · '+Math.round(blob.size/1024)+'KB';const link=document.createElement('a');link.href=objectUrl;link.download=filename;link.textContent='WebP 다운로드';const path=document.createElement('div');path.style.cssText='font-size:11px;overflow-wrap:anywhere;color:#66786f;margin-top:6px';path.textContent='예정 경로: responsorial-psalm/'+folder+'/'+filename;const upload=document.createElement('button');upload.type='button';upload.textContent='GitHub 업로드';upload.style.marginTop='8px';const uploadStatus=document.createElement('div');uploadStatus.style.cssText='font-size:12px;white-space:pre-line;margin-top:6px';const item={blob,path:'responsorial-psalm/'+folder+'/'+filename,button:upload,status:uploadStatus};psalmUploadItems.push(item);upload.onclick=()=>psalmGhUploadOne(item);card.append(img,title,link,path,upload,uploadStatus);preview.append(card);
+   canvas.width=canvas.height=1;
+  }
+  status.textContent=`${count}페이지 변환 완료. 각 페이지의 다운로드 버튼으로 파일을 저장하세요.\n※ GitHub 업로드는 각 페이지의 업로드 버튼을 눌러야 실행됩니다. Google Sheets 자동 매핑은 아직 연결하지 않았습니다.`;
+ }catch(err){status.textContent='변환 실패: '+(err?.message||String(err));}
+ finally{button.disabled=false;}
+}
+
+
+/* V3.23.58: authenticated parent bridge. No token stored in the public HTML. */
+function psalmGhRequest(type, data, timeout=45000){
+ return new Promise((resolve,reject)=>{
+  if(window.parent===window){reject(new Error('GitHub 업로드는 로그인된 풍무동성당 통합 PWA 안에서만 가능합니다.'));return;}
+  const requestId='gh-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  const timer=setTimeout(()=>{psalmGhPending.delete(requestId);reject(new Error('서버 응답 시간 초과. GitHub에서 파일 상태를 확인한 뒤 다시 시도해 주세요.'));},timeout);
+  psalmGhPending.set(requestId,{resolve,reject,timer});
+  window.parent.postMessage({channel:'PUNGMU_ACCOMP_V1',type,requestId,...data},'*');
+ });
+}
+window.addEventListener('message',event=>{
+ if(event.source!==window.parent)return;
+ if(event.origin!=='https://script.google.com'&&event.origin!=='https://script.googleusercontent.com'&&!event.origin.endsWith('.googleusercontent.com'))return;
+ const m=event.data;
+ if(!m||m.channel!=='PUNGMU_ACCOMP_V1'||!['PSALM_GH_CHECK_RESULT','PSALM_GH_UPLOAD_RESULT'].includes(m.type))return;
+ const p=psalmGhPending.get(m.requestId);if(!p)return;
+ clearTimeout(p.timer);psalmGhPending.delete(m.requestId);p.resolve(m);
+});
+function psalmGhBlobBase64(blob){return new Promise((resolve,reject)=>{
+ const reader=new FileReader();reader.onload=()=>{const v=String(reader.result||'');const comma=v.indexOf(',');if(comma<0)reject(new Error('파일 인코딩 실패'));else resolve(v.slice(comma+1));};reader.onerror=()=>reject(new Error('파일 읽기 실패'));reader.readAsDataURL(blob);
+});}
+async function psalmGhUploadOne(item){
+ const btn=item.button;btn.disabled=true;
+ try{
+  if(item.blob.size>4*1024*1024)throw new Error('WebP 파일이 4MB를 초과합니다. 화질을 낮춰 다시 변환해 주세요.');
+  item.status.textContent='GitHub 기존 파일 확인 중…';
+  const check=await psalmGhRequest('PSALM_GH_CHECK',{filePath:item.path});
+  if(!check.ok)throw new Error(check.message||'파일 조회 실패');
+  let replace=false,expectedSha='';
+  if(check.exists){
+   if(!check.sha)throw new Error('기존 파일 버전을 확인할 수 없습니다.');
+   if(!confirm('같은 이름의 악보가 이미 있습니다.\n\n'+item.path+'\n\n기존 악보를 새 파일로 교체하시겠습니까?\nGitHub 커밋 이력에는 이전 버전이 남습니다.')){item.status.textContent='교체를 취소했습니다. 기존 파일은 유지됩니다.';return;}
+   replace=true;expectedSha=check.sha;
+  }
+  item.status.textContent='GitHub '+(replace?'파일 교체':'신규 업로드')+' 요청 중…';
+  const base64=await psalmGhBlobBase64(item.blob);
+  const r=await psalmGhRequest('PSALM_GH_UPLOAD',{payload:{filePath:item.path,base64,replace,expectedSha}},90000);
+  if(!r.ok){
+   if(r.reason==='EXISTS'||r.reason==='CHANGED')throw new Error((r.message||'기존 파일 상태가 변경되었습니다.')+' 다시 확인 후 업로드해 주세요.');
+   throw new Error(r.message||'업로드 실패');
+  }
+  item.status.textContent='GitHub '+(r.replaced?'교체':'업로드')+' 성공.\nGoogle Sheets 매핑은 아직 변경되지 않았습니다.';
+  btn.textContent='GitHub 재업로드';
+ }catch(e){item.status.textContent='업로드 실패: '+(e?.message||String(e));}
+ finally{btn.disabled=false;}
+}
 function psalmAsset(d){return PSALM_ASSETS[d.date]||null;}
 function psalmUrl(d){const a=psalmAsset(d);return a?'responsorial-psalm/'+a[0]+'/'+encodeURIComponent(a[1]):null;}
 function psalmButton(d){
