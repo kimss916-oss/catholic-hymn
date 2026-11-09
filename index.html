@@ -753,11 +753,16 @@ header p{color:#d6eae3 !important;}
 .accomp-notice{padding:12px;border-radius:11px;background:#fff;border:1px solid #c8ded3;color:#425b50;font-size:14px;margin:0 0 12px;line-height:1.6}
 @media(max-width:380px){.today-mass-actions button{font-size:12px;padding:7px 9px}}
 .psalm-card{display:flex;align-items:center;gap:12px;margin-top:10px;padding:11px 12px;background:#f0f7f3;border-radius:12px}.psalm-card b{min-width:62px;color:#075c4e}.psalm-open-btn{border:1px solid #075c4e;background:#fff;color:#075c4e;border-radius:10px;padding:10px 13px;font-size:15px;font-weight:800;cursor:pointer}
-/* V3.23.46: 지난 성가표 화답송 연결 */
+/* V3.23.47: 지난 성가표 화답송 연결 */
 .psalm-open-btn{border:1px solid #075c4e;background:#075c4e;color:#fff;border-radius:10px;padding:12px 14px;font-weight:850;font-size:15px;cursor:pointer;white-space:nowrap}
 .psalm-card{display:flex;align-items:center;gap:14px;margin-top:12px;padding:12px;border:1px solid #c8ded3;border-radius:12px;background:#f5faf7}
 .psalm-card>b{min-width:75px;color:#075c4e}
 .today-highlight .song-box .psalm-open-btn{max-width:100%;white-space:normal;text-align:center}
+/* V3.23.47 future Mass view */
+.future-mass-actions{margin-top:12px;margin-bottom:9px}
+.future-mass-rows{margin-top:10px;border:1px solid #d9e8df;border-radius:13px;overflow:hidden}
+.future-mass-rows .mass-list-row{margin:0!important;border-radius:0!important;border-bottom:1px solid #e5ece7!important;background:#f7f9f8!important}
+.future-mass-rows .mass-list-row:last-child{border-bottom:0!important}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1093,10 +1098,42 @@ function refreshPsalmButtons(){
   if(d)el.innerHTML=psalmButton(d);
  });
 }
+// V3.23.47: 미래 주일별 미사곡 보기 (현재/지난 성가표 상태와 분리)
+const futureMassMode={};
+function toggleFutureMass(date,mode){
+ const d=monthlyData.days.find(x=>x.date===date);
+ if(!d||!isMassDay(d))return;
+ if(mode==='accomp'&&!accompMassAuthorized)return;
+ futureMassMode[date]=futureMassMode[date]===mode?'':mode;
+ renderMonthList();refreshPsalmButtons();
+}
+function futureMassRows(d,mode){
+ if(!mode)return '';
+ const order=['입당','자비송','대영광송','화답송','복음환호송','보편지향기도','봉헌','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양','성체','파견'];
+ const entries=massEntriesForDay(d);
+ return `<div class="future-mass-rows">${order.map(k=>{
+   const e=entries.find(x=>x.key===k);
+   const numbers=e?(e.numbers||[]):((d.songs&&d.songs[k])||[]);
+   if(!e&&!['입당','봉헌','성체','파견'].includes(k))return '';
+   const buttons=k==='화답송'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:numbers.map(n=>`<button class="song-link" onclick="openFutureMassHymn(${n},'${d.date}','${mode}')">${n}</button>`).join('');
+   const extra=k==='봉헌'&&d.봉헌텍스트?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
+   return `<div class="mass-list-row"><strong>${k}</strong><div class="mass-list-values">${buttons}${extra||(!buttons?'<span class="mass-unavailable">-</span>':'')}</div></div>`;
+ }).join('')}</div>`;
+}
+function openFutureMassHymn(n,date,mode){
+ const d=monthlyData.days.find(x=>x.date===date);if(!d)return;
+ // 반주용 악보는 기존 권한 검사와 기존 뷰어를 그대로 사용
+ if(mode==='accomp'&&!accompMassAuthorized)return;
+ accompMassOpen=mode==='accomp'&&accompMassAuthorized;
+ openHymn(n,0,'schedule',dayHymnSequence(d,true));
+}
 function dayCard(d){
  const has=['입당','봉헌','성체','파견'].some(k=>(d.songs[k]||[]).length)||d.봉헌텍스트;
- return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">11/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div></div>${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${d.weekday==='주일'?`<div class="psalm-card"><b>화답송</b><span data-psalm-date="${d.date}">${psalmButton(d)}</span></div>`:''}</div>`;
+ const sunday=isMassDay(d),mode=futureMassMode[d.date]||'';
+ const actions=sunday?`<div class="today-mass-actions future-mass-actions"><button class="${mode==='mass'?'active':''}" onclick="toggleFutureMass('${d.date}','mass')">${mode==='mass'?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${mode==='accomp'?'active':''}" onclick="toggleFutureMass('${d.date}','accomp')">${mode==='accomp'?'반주용 닫기':'반주용 미사곡'}</button>`:''}</div>`:'';
+ return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div></div>${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${actions}${futureMassRows(d,mode)}</div>`;
 }
+
 // V3.23.27: 사용자가 현재 표시된 미사곡 번호를 본당 확정 번호로 확인함.
 // 화답송은 악보 미연결 상태로 유지하며 임의 번호를 부여하지 않는다.
 const MASS_MASTER_META={version:'V3.23.27',status:'CONFIRMED',confirmed:true,source:'본당 사용자 확인',updatedAt:'2026-11-06'};
@@ -1146,8 +1183,8 @@ let accompMassOpen=false;
 // 향후 통합 PWA의 검증된 권한 응답에서만 호출하도록 연결할 함수.
 function applyVerifiedAccompMassPermission(authorized){
  accompMassAuthorized=(authorized===true);
- if(!accompMassAuthorized)accompMassOpen=false;
- renderTodayHighlight();
+ if(!accompMassAuthorized){accompMassOpen=false;Object.keys(futureMassMode).forEach(k=>{if(futureMassMode[k]==='accomp')delete futureMassMode[k]});}
+ renderTodayHighlight();renderMonthList();refreshPsalmButtons();
 }
 
 const accompanistMassScores=[
@@ -1175,7 +1212,7 @@ function toggleAccompMassSongs(){
 }
 function toggleMassSongs(){massSongsVisible=!massSongsVisible;if(massSongsVisible)accompMassOpen=false;renderTodayHighlight();if(pastPreviewDay)renderArchiveMonth()}
 function renderMassDetails(d){
- return `<div class="mass-detail"><div class="mass-info">본당 확정 미사곡 · 화답송 악보는 날짜별로 연결됩니다.</div>${massEntriesForDay(d).map(e=>`<div class="mass-detail-row"><b>${e.key}</b><div>${e.scoreType==='PSALM'?'<span class="mass-unavailable">화답송 악보는 날짜별 성가표에서 확인</span>':e.numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('')}</div></div>`).join('')}</div>`;
+ return `<div class="mass-detail"><div class="mass-info">본당 확정 미사곡 · 화답송 악보는 날짜별로 연결됩니다.</div>${massEntriesForDay(d).map(e=>`<div class="mass-detail-row"><b>${e.key}</b><div>${e.scoreType==='PSALM'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:e.numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('')}</div></div>`).join('')}</div>`;
 }
 function todayMassSongBoxes(d){
  const labels=['입당','봉헌','성체','파견'];
