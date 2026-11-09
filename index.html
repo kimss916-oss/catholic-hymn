@@ -753,6 +753,11 @@ header p{color:#d6eae3 !important;}
 .accomp-notice{padding:12px;border-radius:11px;background:#fff;border:1px solid #c8ded3;color:#425b50;font-size:14px;margin:0 0 12px;line-height:1.6}
 @media(max-width:380px){.today-mass-actions button{font-size:12px;padding:7px 9px}}
 .psalm-card{display:flex;align-items:center;gap:12px;margin-top:10px;padding:11px 12px;background:#f0f7f3;border-radius:12px}.psalm-card b{min-width:62px;color:#075c4e}.psalm-open-btn{border:1px solid #075c4e;background:#fff;color:#075c4e;border-radius:10px;padding:10px 13px;font-size:15px;font-weight:800;cursor:pointer}
+/* V3.23.46: 지난 성가표 화답송 연결 */
+.psalm-open-btn{border:1px solid #075c4e;background:#075c4e;color:#fff;border-radius:10px;padding:12px 14px;font-weight:850;font-size:15px;cursor:pointer;white-space:nowrap}
+.psalm-card{display:flex;align-items:center;gap:14px;margin-top:12px;padding:12px;border:1px solid #c8ded3;border-radius:12px;background:#f5faf7}
+.psalm-card>b{min-width:75px;color:#075c4e}
+.today-highlight .song-box .psalm-open-btn{max-width:100%;white-space:normal;text-align:center}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1170,7 +1175,7 @@ function toggleAccompMassSongs(){
 }
 function toggleMassSongs(){massSongsVisible=!massSongsVisible;if(massSongsVisible)accompMassOpen=false;renderTodayHighlight();if(pastPreviewDay)renderArchiveMonth()}
 function renderMassDetails(d){
- return `<div class="mass-detail"><div class="mass-info">본당 확정 미사곡 · 화답송 악보는 연결 예정입니다.</div>${massEntriesForDay(d).map(e=>`<div class="mass-detail-row"><b>${e.key}</b><div>${e.scoreType==='PSALM'?'<span class="mass-unavailable">화답송 악보 준비 중 · 페이지 연결 예정</span>':e.numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('')}</div></div>`).join('')}</div>`;
+ return `<div class="mass-detail"><div class="mass-info">본당 확정 미사곡 · 화답송 악보는 날짜별로 연결됩니다.</div>${massEntriesForDay(d).map(e=>`<div class="mass-detail-row"><b>${e.key}</b><div>${e.scoreType==='PSALM'?'<span class="mass-unavailable">화답송 악보는 날짜별 성가표에서 확인</span>':e.numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('')}</div></div>`).join('')}</div>`;
 }
 function todayMassSongBoxes(d){
  const labels=['입당','봉헌','성체','파견'];
@@ -1181,12 +1186,12 @@ function todayIntegratedSongBoxes(d){
  const entries=massOn?massEntriesForDay(d):[];
  const massKeys=new Set(entries.map(e=>e.key));
  const order=['입당','자비송','대영광송','화답송','복음환호송','보편지향기도','봉헌','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양','성체','파견'];
- return order.filter(k=>!massOn?['입당','봉헌','성체','파견'].includes(k):(['입당','봉헌','성체','파견'].includes(k)||massKeys.has(k))).map(k=>{
+ return order.filter(k=>!massOn?(['입당','봉헌','성체','파견'].includes(k)||(k==='화답송'&&d.weekday==='주일')):(['입당','봉헌','성체','파견'].includes(k)||massKeys.has(k))).map(k=>{
   const mass=massKeys.has(k), entry=mass?entries.find(e=>e.key===k):null;
   const numbers=mass?(entry.numbers||[]):(d.songs[k]||[]);
   const buttons=numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');
   const extra=(!mass&&k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
-  const pending=mass&&entry.scoreType==='PSALM'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:'';
+  const pending=k==='화답송'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:'';
   return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b class="${mass && k.length>=10?'long-mass-name':''}">${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>`;
  }).join('');
 }
@@ -1300,7 +1305,7 @@ function renderArchiveMonth(){
  const showNormal=isCurrent&&!showPastCurrentMonth;
  const todayChildren=[...document.getElementById("todayPanel").children].filter(el=>!el.classList.contains("month-nav-card")&&el.id!=="archiveScheduleBox"&&el.id!=="pastScheduleAction");
  todayChildren.forEach(el=>el.style.display=showNormal?"":"none");
- if(isCurrent){box.style.display=showPastCurrentMonth?"block":"none";if(showPastCurrentMonth)renderPastCurrentMonth();return;}
+ if(isCurrent){box.style.display=showPastCurrentMonth?"block":"none";if(showPastCurrentMonth){renderPastCurrentMonth();refreshPsalmButtons();}return;}
  box.style.display='block';
  const pack=getMonthPack(y,m);
  if(!pack){box.innerHTML=`<div class="archive-month-head"><b>${y}년 ${m}월 성가표</b></div><div class="archive-empty">등록된 성가표가 없습니다.</div>`;return;}
