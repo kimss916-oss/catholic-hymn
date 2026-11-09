@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.45-PSALM-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.50-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -768,6 +768,15 @@ header p{color:#d6eae3 !important;}
 .future-mass-rows{margin-top:10px;border:1px solid #d9e8df;border-radius:13px;overflow:hidden}
 .future-mass-rows .mass-list-row{margin:0!important;border-radius:0!important;border-bottom:1px solid #e5ece7!important;background:#f7f9f8!important}
 .future-mass-rows .mass-list-row:last-child{border-bottom:0!important}
+/* V3.23.50: smartphone places Mass buttons after hymn numbers; tablet/PC unchanged */
+@media(max-width:699px){
+  #monthList .month-card:has(.future-mass-actions){display:flex;flex-direction:column;}
+  #monthList .month-card:has(.future-mass-actions) > .month-head{order:0;}
+  #monthList .month-card:has(.future-mass-actions) > .song-grid,
+  #monthList .month-card:has(.future-mass-actions) > .note{order:1;}
+  #monthList .month-card:has(.future-mass-actions) > .future-mass-actions{order:2;margin:10px 0 0;justify-content:flex-end;}
+  #monthList .month-card:has(.future-mass-actions) > .future-mass-rows{order:3;}
+}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -843,7 +852,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.48 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.50 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
