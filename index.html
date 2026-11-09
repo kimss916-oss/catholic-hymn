@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.59-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.60-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -802,6 +802,16 @@ header p{color:#d6eae3 !important;}
 .psalm-convert .convert-page a{display:inline-block;text-decoration:none;background:#075c4e;color:#fff;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:800}
 .psalm-convert #psalmConvertStatus{white-space:pre-line;line-height:1.5;font-size:13px;margin-top:10px}
 @media(max-width:500px){.psalm-convert .convert-controls{grid-template-columns:1fr}}
+/* V3.23.60-TEST: 화답송 악보 보기 버튼을 일반 성가 버튼과 동일한 중립색으로 통일 */
+.psalm-open-btn,
+.today-highlight .song-box .psalm-open-btn {
+  background:#fff !important;
+  color:#111827 !important;
+  border:1px solid #cbd2dc !important;
+  box-shadow:none !important;
+}
+.psalm-open-btn:hover { background:#f7f8fb !important; }
+.psalm-open-btn:focus-visible { outline:2px solid #075c4e; outline-offset:2px; }
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1852,7 +1862,7 @@ function showToday(){
 }
 renderCategoryButtons();
 
-/* V3.23.59-TEST: HYMN_SCHEDULE 읽기 전용 연동. 기존 HTML은 장애 시 백업. */
+/* V3.23.60-TEST: HYMN_SCHEDULE 읽기 전용 연동. 기존 HTML은 장애 시 백업. */
 const HYMN_SCHEDULE_API=PSALM_REMOTE_URL.replace(/([?&])action=psalmMappings(?:&|$)/,'$1').replace(/[?&]$/,'');
 const hymnScheduleRequests=new Map();
 const hymnScheduleLoaded=new Set();
