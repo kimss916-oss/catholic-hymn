@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.60-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.61-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -812,6 +812,39 @@ header p{color:#d6eae3 !important;}
 }
 .psalm-open-btn:hover { background:#f7f8fb !important; }
 .psalm-open-btn:focus-visible { outline:2px solid #075c4e; outline-offset:2px; }
+
+/* V3.23.61 TEST: 복수 성가번호 버튼 겹침 방지 (표시 CSS만 수정) */
+.today-highlight .song-box .song-buttons,
+#monthList .month-card .song-box .song-buttons {
+  display:flex !important;
+  flex-wrap:wrap !important;
+  justify-content:flex-start !important;
+  align-items:center !important;
+  gap:8px !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+.today-highlight .song-box .song-buttons > .song-link,
+#monthList .month-card .song-box .song-buttons > .song-link {
+  flex:0 0 auto !important;
+  width:68px !important;
+  min-width:68px !important;
+  max-width:68px !important;
+  height:46px !important;
+  padding:0 4px !important;
+  margin:0 !important;
+  font-size:21px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+}
+@media(max-width:650px){
+  #monthList .month-card .song-box .song-buttons > .song-link {
+    width:54px !important;
+    min-width:54px !important;
+    max-width:54px !important;
+    font-size:19px !important;
+  }
+}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -888,7 +921,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.58 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.61 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
