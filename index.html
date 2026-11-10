@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.62-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.63-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -965,7 +965,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.62 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.63 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1943,32 +1943,49 @@ renderCategoryButtons();
 const HYMN_SCHEDULE_API=PSALM_REMOTE_URL.replace(/([?&])action=psalmMappings(?:&|$)/,'$1').replace(/[?&]$/,'');
 const hymnScheduleRequests=new Map();
 const hymnScheduleLoaded=new Set();
+// V3.23.63: 원격 성가표의 필드 형식 및 비정상 합쳐진 번호 검증
 function hymnScheduleNums(value){
-  if(Array.isArray(value))return value.map(Number).filter(Number.isFinite);
-  if(value==null||value==='')return [];
-  return String(value).split(/[,/·\s]+/).map(Number).filter(n=>Number.isFinite(n)&&n>0);
+  const raw=Array.isArray(value)?value:(value==null||value===''?[]:String(value).split(/[,，/·\s]+/));
+  return raw.map(v=>Number(v)).filter(n=>Number.isInteger(n)&&n>=1&&n<=528);
 }
-function normalizeHymnRemoteDay(d){
+function hymnScheduleRaw(d,key,english){
+  if(d.songs && Object.prototype.hasOwnProperty.call(d.songs,key))return d.songs[key];
+  return d[english];
+}
+function normalizeHymnRemoteDay(d,original){
   const date=String(d.date||'');
-  return {date,day:Number(d.day)||Number(date.slice(-2)),weekday:String(d.weekday||''),liturgy:String(d.liturgy||''),
-    songs:{'입당':hymnScheduleNums(d.entrance),'봉헌':hymnScheduleNums(d.offertory),
-      '성체':hymnScheduleNums(d.communion),'파견':hymnScheduleNums(d.recessional)},
-    '봉헌텍스트':String(d.offertoryText||''),'비고':String(d.note||'')};
+  const songs={};
+  for(const [key,english] of [['입당','entrance'],['봉헌','offertory'],['성체','communion'],['파견','recessional']]){
+    const raw=hymnScheduleRaw(d,key,english);
+    const parsed=hymnScheduleNums(raw);
+    const previous=(original?.songs?.[key]||[]);
+    const hasRaw=Array.isArray(raw)?raw.length>0:String(raw??'').trim()!=='';
+    // 유효하지 않은 원격 값(예: 161175)이 기존 정상 번호를 지우지 못하게 보호
+    songs[key]=(hasRaw && !parsed.length && previous.length)?[...previous]:parsed;
+    if(hasRaw&&!parsed.length)console.warn('[성가표] 유효하지 않은 성가번호, 기존 값 보존',date,key,raw);
+  }
+  return {date,day:Number(d.day)||Number(date.slice(-2)),weekday:String(d.weekday||original?.weekday||''),
+    liturgy:String(d.liturgy||original?.liturgy||''),songs,
+    '봉헌텍스트':String(d.offertoryText??d['봉헌텍스트']??original?.['봉헌텍스트']??''),
+    '비고':String(d.note??d['비고']??original?.['비고']??'')};
 }
 function applyHymnScheduleRemote(y,m,days){
   const isCurrent=Number(monthlyData.year)===y&&Number(monthlyData.month)===m;
   if(isCurrent){
-    // 특수성가(장례·성시간)는 HYMN_SCHEDULE의 관리 대상이 아니므로 보존
-    monthlyData.days=days.map(normalizeHymnRemoteDay);
+    const originals=new Map(monthlyData.days.map(d=>[d.date,d]));
+    monthlyData.days=days.map(d=>normalizeHymnRemoteDay(d,originals.get(String(d.date||''))));
     renderMonth();
     const selectedYear=Number(document.getElementById('scheduleYear').value);
     const selectedMonth=Number(document.getElementById('scheduleMonth').value);
     if(selectedYear===y&&selectedMonth===m)renderArchiveMonth();
     if(typeof psalmLoadRemote==='function')psalmLoadRemote();
   }else{
-    const pack={year:y,month:m,days:days.map(d=>({date:d.date,liturgy:d.liturgy||'',
-      entrance:hymnScheduleNums(d.entrance).join(','),offertory:hymnScheduleNums(d.offertory).join(','),
-      communion:hymnScheduleNums(d.communion).join(','),recessional:hymnScheduleNums(d.recessional).join(',')}))};
+    const pack={year:y,month:m,days:days.map(d=>{
+      const parsed=normalizeHymnRemoteDay(d);
+      return {date:parsed.date,liturgy:parsed.liturgy,
+        entrance:parsed.songs['입당'].join(','),offertory:parsed.songs['봉헌'].join(','),
+        communion:parsed.songs['성체'].join(','),recessional:parsed.songs['파견'].join(',')};
+    })};
     const i=monthlyArchive.findIndex(p=>Number(p.year)===y&&Number(p.month)===m);
     if(i>=0)monthlyArchive[i]=pack;else monthlyArchive.push(pack);
     if(Number(document.getElementById('scheduleYear').value)===y&&Number(document.getElementById('scheduleMonth').value)===m)renderArchiveMonth();
