@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.69-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.70-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1371,10 +1371,53 @@ function openPsalmMapAdmin(){
  <div class="map-actions"><button type="button" onclick="closePsalmMapAdmin()">닫기</button></div></div>`;
  renderPsalmMapRows();psalmRemoteNotice();psalmConvertMount();psalmLoadLibrary();psalmShowAdminTab(psalmAdminTab);
 }
+function psalmLiturgicalCycle(date){
+ // The liturgical year changes at Advent I, not on January 1.
+ const y=Number(date.slice(0,4)),month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
+ const christmas=new Date(y,11,25),weekday=christmas.getDay();
+ const advent1=new Date(y,11,25-((weekday+28)%7)-21); // four Sundays before Christmas
+ const litYear=new Date(y,month-1,day)>=advent1?y+1:y;
+ return ['year-a','year-b','year-c'][(litYear-2027+300)%3];
+}
+function psalmDefaultUpload(date){
+ const d=monthlyData.days.find(x=>x.date===date);
+ const folder=psalmLiturgicalCycle(date);
+ const suffix={'year-a':'가해','year-b':'나해','year-c':'다해'}[folder];
+ const name=psalmConvertFilename((d?.liturgy||'화답송').trim()+'_'+suffix);
+ const f=document.getElementById('psalmConvertFolder'),n=document.getElementById('psalmConvertName');
+ if(f)f.value=folder;if(n)n.value=name;
+ psalmConvertReset();psalmCheckExistingPreview();
+}
+async function psalmCheckExistingPreview(){
+ const host=document.getElementById('psalmExistingPreview');if(!host)return;
+ const folder=document.getElementById('psalmConvertFolder')?.value;
+ const name=psalmConvertFilename(document.getElementById('psalmConvertName')?.value);
+ host.replaceChildren();if(!name||!folder)return;
+ const path='responsorial-psalm/'+folder+'/'+name+'.webp';
+ const status=document.createElement('p');status.className='note';status.textContent='기존 악보 확인 중: '+path;host.append(status);
+ try{
+  const result=await psalmGhRequest('PSALM_GH_CHECK',{filePath:path});
+  if(!host.isConnected||document.getElementById('psalmConvertFolder')?.value!==folder||psalmConvertFilename(document.getElementById('psalmConvertName')?.value)!==name)return;
+  if(!result.ok)throw Error(result.message||'조회 실패');
+  if(!result.exists){status.textContent='동일한 파일 없음 · 신규 등록 가능';return;}
+  status.textContent='동일한 파일이 있습니다. 아래 기존 악보를 먼저 확인하세요.';
+  const img=document.createElement('img');img.alt='GitHub 기존 악보 미리보기';img.style.cssText='width:100%;max-height:420px;object-fit:contain;border:1px solid #d5e5dc;border-radius:8px';
+  img.src='https://kimss916-oss.github.io/catholic-hymn/'+path.split('/').map(encodeURIComponent).join('/')+'?preview='+encodeURIComponent(result.sha||'');
+  host.append(img);
+  const note=document.createElement('p');note.className='note';note.textContent='기존 파일을 유지하려면 업로드하지 않고 「목록에서 선택」으로 날짜에 연결하세요. 수정된 악보라면 업로드 시 교체 확인을 거칩니다.';host.append(note);
+ }catch(e){status.textContent='기존 파일 확인 실패: '+(e.message||e);}
+}
+function psalmRegisterFromMass(date){
+ if(!accompMassAuthorized)return;
+ psalmAdminTab='status';openPsalmMapAdmin();
+ psalmEditingDate=date;renderPsalmMapRows();
+ psalmOpenUpload(date);
+ const row=document.getElementById('psalmPath_'+date);if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+}
 function psalmOpenUpload(date){
  psalmLibraryChosenDate=date;
  const library=document.getElementById('psalmLibrarySection');if(library)library.hidden=false;
- const details=document.getElementById('psalmUploadDetails');if(details){details.open=true;details.scrollIntoView({behavior:'smooth',block:'start'});}
+ const details=document.getElementById('psalmUploadDetails');if(details){details.open=true;details.scrollIntoView({behavior:'smooth',block:'start'});} psalmDefaultUpload(date);
  const notice=document.getElementById('psalmLibraryStatus');if(notice)notice.textContent=date+' 악보를 업로드한 뒤 「목록에서 선택」 → 「Google Sheets 저장」으로 연결하세요.';
 }
 function psalmStatusDates(){
@@ -1540,10 +1583,10 @@ function psalmConvertMount(){
  root.innerHTML=`<div class="psalm-convert"><h4>화답송 악보 WebP 변환 · GitHub 업로드 (V3.23.58 시험)</h4>
  <p>PDF의 모든 페이지 또는 JPG·PNG 이미지를 WebP로 변환합니다. 변환은 기기에서 처리하며, 업로드 버튼을 누를 때만 WebP 파일을 통합 PWA를 통해 GitHub로 전송합니다. Google Sheets 자동 매핑은 다음 단계에서 연결합니다.</p>
  <label for="psalmConvertFile">악보 파일 선택</label><input id="psalmConvertFile" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="psalmConvertReset()">
- <label for="psalmConvertName">전례명 / 파일명 (확장자 제외)</label><input id="psalmConvertName" type="text" oninput="psalmConvertReset()" placeholder="예: 연중 제33주일_가해" maxlength="100">
- <div class="convert-controls"><div><label for="psalmConvertFolder">GitHub 저장 예정 폴더</label><select id="psalmConvertFolder" onchange="psalmConvertReset()"><option value="year-a">가해 (year-a)</option><option value="year-b">나해 (year-b)</option><option value="year-c">다해 (year-c)</option><option value="common">공통 (common)</option></select></div>
+ <label for="psalmConvertName">전례명 / 파일명 (확장자 제외)</label><input id="psalmConvertName" type="text" oninput="psalmConvertReset();psalmCheckExistingPreview()" placeholder="예: 연중 제33주일_가해" maxlength="100">
+ <div class="convert-controls"><div><label for="psalmConvertFolder">GitHub 저장 예정 폴더</label><select id="psalmConvertFolder" onchange="psalmConvertReset();psalmCheckExistingPreview()"><option value="year-a">가해 (year-a)</option><option value="year-b">나해 (year-b)</option><option value="year-c">다해 (year-c)</option><option value="common">공통 (common)</option></select></div>
  <div><label for="psalmConvertQuality">WebP 화질</label><select id="psalmConvertQuality" onchange="psalmConvertReset()"><option value="0.95">고화질 (95%)</option><option value="0.98">최고화질 (98%)</option><option value="0.90">균형 (90%)</option></select></div></div>
- <div class="map-actions"><button class="map-primary" type="button" id="psalmConvertStart" onclick="psalmConvertRun()">WebP 변환 및 미리보기</button><button type="button" onclick="psalmConvertReset(true)">변환 결과 지우기</button></div>
+ <div id="psalmExistingPreview" aria-live="polite"></div><div class="map-actions"><button class="map-primary" type="button" id="psalmConvertStart" onclick="psalmConvertRun()">WebP 변환 및 미리보기</button><button type="button" onclick="psalmConvertReset(true)">변환 결과 지우기</button></div>
  <div id="psalmConvertStatus" role="status" aria-live="polite"></div><div id="psalmConvertPreview" class="convert-preview"></div></div>`;
 }
 function psalmConvertReset(clearInput=false){psalmUploadItems=[];psalmConvertClear();const p=document.getElementById('psalmConvertPreview');if(p)p.replaceChildren();const t=document.getElementById('psalmConvertStatus');if(t)t.textContent='';if(clearInput){const f=document.getElementById('psalmConvertFile');if(f)f.value='';}}
@@ -1645,7 +1688,7 @@ async function psalmGhUploadOne(item){
 function psalmAsset(d){return PSALM_ASSETS[d.date]||null;}
 function psalmUrl(d){const a=psalmAsset(d);return a?'responsorial-psalm/'+a[0]+'/'+encodeURIComponent(a[1]):null;}
 function psalmButton(d){
- if(!psalmAsset(d))return '<span class="mass-unavailable">미등록</span>';
+ if(!psalmAsset(d))return accompMassAuthorized?`<button class="psalm-open-btn" type="button" onclick="psalmRegisterFromMass('${d.date}')">화답송 악보 등록</button>`:'<span class="mass-unavailable">미등록</span>';
  const status=psalmStatus[d.date];
  if(status==='ok')return `<button class="psalm-open-btn" type="button" onclick="openPsalm('${d.date}',event);return false;">화답송 악보 보기</button>`;
  if(status==='missing')return '<span class="mass-unavailable">파일 확인 필요</span>';
