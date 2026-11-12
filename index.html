@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.70-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.71-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1409,10 +1409,13 @@ async function psalmCheckExistingPreview(){
 }
 function psalmRegisterFromMass(date){
  if(!accompMassAuthorized)return;
+ // Registered dates open the same management workflow, with the matching date expanded.
  psalmAdminTab='status';openPsalmMapAdmin();
- psalmEditingDate=date;renderPsalmMapRows();
- psalmOpenUpload(date);
- const row=document.getElementById('psalmPath_'+date);if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
+ psalmEditingDate=date;psalmRenderStatusRows();
+ const asset=PSALM_ASSETS[date];
+ if(!asset)psalmOpenUpload(date);
+ const row=document.getElementById('psalmPath_'+date);
+ if(row)row.scrollIntoView({block:'center',behavior:'smooth'});
 }
 function psalmOpenUpload(date){
  psalmLibraryChosenDate=date;
@@ -1688,11 +1691,12 @@ async function psalmGhUploadOne(item){
 function psalmAsset(d){return PSALM_ASSETS[d.date]||null;}
 function psalmUrl(d){const a=psalmAsset(d);return a?'responsorial-psalm/'+a[0]+'/'+encodeURIComponent(a[1]):null;}
 function psalmButton(d){
- if(!psalmAsset(d))return accompMassAuthorized?`<button class="psalm-open-btn" type="button" onclick="psalmRegisterFromMass('${d.date}')">화답송 악보 등록</button>`:'<span class="mass-unavailable">미등록</span>';
- const status=psalmStatus[d.date];
- if(status==='ok')return `<button class="psalm-open-btn" type="button" onclick="openPsalm('${d.date}',event);return false;">화답송 악보 보기</button>`;
- if(status==='missing')return '<span class="mass-unavailable">파일 확인 필요</span>';
- return '<span class="mass-unavailable">악보 확인 중…</span>';
+ const asset=psalmAsset(d),status=psalmStatus[d.date];
+ const manage=accompMassAuthorized?` <button class="psalm-open-btn" type="button" onclick="psalmRegisterFromMass('${d.date}')">${asset?'악보 관리':'화답송 등록'}</button>`:'';
+ if(!asset)return accompMassAuthorized?manage:'<span class="mass-unavailable">미등록</span>';
+ if(status==='ok')return `<button class="psalm-open-btn" type="button" onclick="openPsalm('${d.date}',event);return false;">화답송 악보 보기</button>${manage}`;
+ if(status==='missing')return `<span class="mass-unavailable">파일 확인 필요</span>${manage}`;
+ return `<span class="mass-unavailable">악보 확인 중…</span>${manage}`;
 }
 function openPsalm(date, ev, forcePreview=false){
  if(ev){ev.preventDefault();ev.stopPropagation();}
