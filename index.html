@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.65-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.66-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1459,9 +1459,9 @@ function psalmConvertMount(){
  root.innerHTML=`<div class="psalm-convert"><h4>화답송 악보 WebP 변환 · GitHub 업로드 (V3.23.58 시험)</h4>
  <p>PDF의 모든 페이지 또는 JPG·PNG 이미지를 WebP로 변환합니다. 변환은 기기에서 처리하며, 업로드 버튼을 누를 때만 WebP 파일을 통합 PWA를 통해 GitHub로 전송합니다. Google Sheets 자동 매핑은 다음 단계에서 연결합니다.</p>
  <label for="psalmConvertFile">악보 파일 선택</label><input id="psalmConvertFile" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="psalmConvertReset()">
- <label for="psalmConvertName">전례명 / 파일명 (확장자 제외)</label><input id="psalmConvertName" type="text" placeholder="예: 연중 제33주일_가해" maxlength="100">
- <div class="convert-controls"><div><label for="psalmConvertFolder">GitHub 저장 예정 폴더</label><select id="psalmConvertFolder"><option value="year-a">가해 (year-a)</option><option value="year-b">나해 (year-b)</option><option value="year-c">다해 (year-c)</option><option value="common">공통 (common)</option></select></div>
- <div><label for="psalmConvertQuality">WebP 화질</label><select id="psalmConvertQuality"><option value="0.95">고화질 (95%)</option><option value="0.98">최고화질 (98%)</option><option value="0.90">균형 (90%)</option></select></div></div>
+ <label for="psalmConvertName">전례명 / 파일명 (확장자 제외)</label><input id="psalmConvertName" type="text" oninput="psalmConvertReset()" placeholder="예: 연중 제33주일_가해" maxlength="100">
+ <div class="convert-controls"><div><label for="psalmConvertFolder">GitHub 저장 예정 폴더</label><select id="psalmConvertFolder" onchange="psalmConvertReset()"><option value="year-a">가해 (year-a)</option><option value="year-b">나해 (year-b)</option><option value="year-c">다해 (year-c)</option><option value="common">공통 (common)</option></select></div>
+ <div><label for="psalmConvertQuality">WebP 화질</label><select id="psalmConvertQuality" onchange="psalmConvertReset()"><option value="0.95">고화질 (95%)</option><option value="0.98">최고화질 (98%)</option><option value="0.90">균형 (90%)</option></select></div></div>
  <div class="map-actions"><button class="map-primary" type="button" id="psalmConvertStart" onclick="psalmConvertRun()">WebP 변환 및 미리보기</button><button type="button" onclick="psalmConvertReset(true)">변환 결과 지우기</button></div>
  <div id="psalmConvertStatus" role="status" aria-live="polite"></div><div id="psalmConvertPreview" class="convert-preview"></div></div>`;
 }
@@ -1498,7 +1498,7 @@ async function psalmConvertRun(){
    if(documentPdf){const page=await documentPdf.getPage(i);const raw=page.getViewport({scale:1});const scale=Math.min(2.5,2600/Math.max(raw.width,raw.height));const viewport=page.getViewport({scale});canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);await page.render({canvasContext:ctx,viewport}).promise;page.cleanup();}
    else {const max=3000;const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight));canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(image,0,0,canvas.width,canvas.height);}
    const blob=await psalmConvertCanvasToBlob(canvas,quality);const filename=name+(count>1?'_'+i:'')+'.webp';const objectUrl=URL.createObjectURL(blob);psalmConvertUrls.push(objectUrl);
-   const card=document.createElement('div');card.className='convert-page';const img=document.createElement('img');img.src=objectUrl;img.alt=`변환 미리보기 ${i}페이지`;const title=document.createElement('strong');title.textContent=filename+' · '+Math.round(blob.size/1024)+'KB';const link=document.createElement('a');link.href=objectUrl;link.download=filename;link.textContent='WebP 다운로드';const path=document.createElement('div');path.style.cssText='font-size:11px;overflow-wrap:anywhere;color:#66786f;margin-top:6px';path.textContent='예정 경로: responsorial-psalm/'+folder+'/'+filename;const upload=document.createElement('button');upload.type='button';upload.textContent='GitHub 업로드';upload.style.marginTop='8px';const uploadStatus=document.createElement('div');uploadStatus.style.cssText='font-size:12px;white-space:pre-line;margin-top:6px';const item={blob,path:'responsorial-psalm/'+folder+'/'+filename,button:upload,status:uploadStatus};psalmUploadItems.push(item);upload.onclick=()=>psalmGhUploadOne(item);card.append(img,title,link,path,upload,uploadStatus);preview.append(card);
+   const card=document.createElement('div');card.className='convert-page';const img=document.createElement('img');img.src=objectUrl;img.alt=`변환 미리보기 ${i}페이지`;const title=document.createElement('strong');title.textContent=filename+' · '+Math.round(blob.size/1024)+'KB';const link=document.createElement('a');link.href=objectUrl;link.download=filename;link.textContent='WebP 다운로드';const path=document.createElement('div');path.style.cssText='font-size:11px;overflow-wrap:anywhere;color:#66786f;margin-top:6px';path.textContent='예정 경로: responsorial-psalm/'+folder+'/'+filename;const upload=document.createElement('button');upload.type='button';upload.textContent='GitHub 업로드';upload.style.marginTop='8px';const uploadStatus=document.createElement('div');uploadStatus.style.cssText='font-size:12px;white-space:pre-line;margin-top:6px';const item={blob,path:'responsorial-psalm/'+folder+'/'+filename,filename,folder,button:upload,status:uploadStatus};psalmUploadItems.push(item);upload.onclick=()=>psalmGhUploadOne(item);card.append(img,title,link,path,upload,uploadStatus);preview.append(card);
    canvas.width=canvas.height=1;
   }
   status.textContent=`${count}페이지 변환 완료. 각 페이지의 다운로드 버튼으로 파일을 저장하세요.\n※ GitHub 업로드는 각 페이지의 업로드 버튼을 눌러야 실행됩니다. Google Sheets 자동 매핑은 아직 연결하지 않았습니다.`;
@@ -1531,6 +1531,13 @@ function psalmGhBlobBase64(blob){return new Promise((resolve,reject)=>{
 async function psalmGhUploadOne(item){
  const btn=item.button;btn.disabled=true;
  try{
+  if(!psalmUploadItems.includes(item))throw new Error('설정이 변경되었습니다. WebP 변환 및 미리보기를 다시 실행해 주세요.');
+  const chosenFolder=document.getElementById('psalmConvertFolder')?.value;
+  const chosenName=psalmConvertFilename(document.getElementById('psalmConvertName')?.value||document.getElementById('psalmConvertFile')?.files?.[0]?.name?.replace(/\.[^.]+$/,''));
+  const expectedName=chosenName+(item.filename.match(/_(\d+)\.webp$/)?.[0]||'.webp');
+  if(chosenFolder!==item.folder || item.filename!==expectedName)throw new Error('파일명 또는 분류가 변경되었습니다. WebP 변환 및 미리보기를 다시 실행해 주세요.');
+  if(!confirm('GitHub 최종 저장 경로를 확인해 주세요.\n\n'+item.path+'\n\n이 경로로 업로드하시겠습니까?')){item.status.textContent='업로드를 취소했습니다.';return;}
+
   if(item.blob.size>4*1024*1024)throw new Error('WebP 파일이 4MB를 초과합니다. 화질을 낮춰 다시 변환해 주세요.');
   item.status.textContent='GitHub 기존 파일 확인 중…';
   const check=await psalmGhRequest('PSALM_GH_CHECK',{filePath:item.path});
@@ -1548,7 +1555,8 @@ async function psalmGhUploadOne(item){
    if(r.reason==='EXISTS'||r.reason==='CHANGED')throw new Error((r.message||'기존 파일 상태가 변경되었습니다.')+' 다시 확인 후 업로드해 주세요.');
    throw new Error(r.message||'업로드 실패');
   }
-  item.status.textContent='GitHub '+(r.replaced?'교체':'업로드')+' 성공.\nGoogle Sheets 매핑은 아직 변경되지 않았습니다.';
+  if(r.filePath!==item.path || !r.commitSha)throw new Error('GitHub 응답에 저장 경로 또는 커밋 ID가 없습니다. 저장소에서 확인해 주세요.');
+  item.status.textContent='GitHub '+(r.replaced?'교체':'업로드')+' 성공.\n실제 경로: '+r.filePath+'\n커밋 ID: '+r.commitSha+'\nGoogle Sheets 매핑은 아직 변경되지 않았습니다.';
   btn.textContent='GitHub 재업로드';
  }catch(e){item.status.textContent='업로드 실패: '+(e?.message||String(e));}
  finally{btn.disabled=false;}
