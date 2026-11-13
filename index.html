@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.78-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.79-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -29,8 +29,8 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .viewer .vtitle{font-size:clamp(15px,2.6vw,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .viewer .toolbar button{white-space:nowrap}
 .page-stage{position:absolute;inset:0;background:var(--paper-color,#f7f7f5)!important;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
-.page-stage{padding:clamp(6px,1vmin,12px) clamp(4px,0.7vmin,8px);box-sizing:border-box;background:var(--paper-color,#f7f7f5)!important}
-.page-stage img{display:block;max-width:99%;max-height:97%;width:auto;height:auto;object-fit:contain;background:transparent;-webkit-user-drag:none;box-shadow:none}
+.page-stage{padding:clamp(6px,1vmin,12px) clamp(7px,1.2vmin,14px);box-sizing:border-box;background:var(--paper-color,#f7f7f5)!important}
+.page-stage img{display:block;max-width:97%;max-height:97%;width:auto;height:auto;object-fit:contain;background:transparent;-webkit-user-drag:none;box-shadow:none}
 .page-indicator{position:absolute;z-index:25;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,28,46,.78);color:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;pointer-events:none;transition:opacity .2s}
 .viewer:not(.controls-show) .page-indicator{opacity:.35}
 .viewer .nav{position:absolute;z-index:30;left:0;right:0;bottom:0;transform:translateY(120%);transition:transform .22s ease;background:rgba(255,255,255,.97);padding:10px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-shadow:0 -3px 14px rgba(0,0,0,.15)}
@@ -48,7 +48,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 /* V3.14: Android 로컬/전체화면에서도 악보 주변 여백을 강제로 종이색으로 덮는다. */
 .page-stage{isolation:isolate;background:#f2f3f4!important;}
 .page-stage::before{content:"";position:absolute;inset:0;z-index:0;background:var(--paper-color,#f2f3f4)!important;pointer-events:none;}
-.page-stage img{position:relative;z-index:1;max-width:99%!important;max-height:97%!important;background:transparent!important;}
+.page-stage img{position:relative;z-index:1;max-width:97%!important;max-height:97%!important;background:transparent!important;}
 .viewer.open,.viewer:fullscreen,.viewer:-webkit-full-screen{background:#f2f3f4!important;}
 .viewer:fullscreen .page-stage::before,.viewer:-webkit-full-screen .page-stage::before{background:var(--paper-color,#f2f3f4)!important;}
 
@@ -59,7 +59,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .page-stage::before{background:#fff!important;}
 .viewer:fullscreen .page-stage,.viewer:-webkit-full-screen .page-stage,
 .viewer:fullscreen .page-stage::before,.viewer:-webkit-full-screen .page-stage::before{background:#fff!important;}
-.page-stage img{max-width:99%!important;max-height:97%!important;}
+.page-stage img{max-width:97%!important;max-height:97%!important;}
 
 
 /* V3.17: 가톨릭성가 분류별 검색 */
@@ -889,6 +889,25 @@ header p{color:#d6eae3 !important;}
     font-size:19px !important;
   }
 }
+
+/* V3.23.79 TEST: 좌우 화면 폭 우선 악보 표시 (기존 배경색 유지) */
+.viewer.open .page-stage{
+  padding:6px 3px !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  scrollbar-width:none;
+}
+.viewer.open .page-stage::-webkit-scrollbar{display:none}
+.viewer.open .page-stage img{
+  width:100% !important;
+  max-width:100% !important;
+  height:auto !important;
+  max-height:none !important;
+  flex:0 0 auto;
+  object-fit:contain;
+}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -965,7 +984,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.78 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.79 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1074,6 +1093,7 @@ function renderHymnPage(){
  currentPage=Math.max(0,Math.min(currentPage,h.pages.length-1));
  imageErrorShown=false; folderHelp.classList.remove('show'); pageImage.style.display='block';
  pageImage.alt=activePsalmScore?`${activePsalmScore.title} ${currentPage+1}페이지`:`${current}번 성가 ${currentPage+1}페이지`;
+ pages.scrollTop=0;
  pageImage.src=getHymnSrc(h.pages[currentPage]);
  pageIndicator.textContent=`${currentPage+1} / ${h.pages.length}`;
  vtitle.textContent=activePsalmScore?`${h.title} · ${currentPage+1}/${h.pages.length}`:`${current}번 ${h.title||''}  ·  ${currentPage+1}/${h.pages.length}`;
@@ -1176,9 +1196,9 @@ function toggleControls(){
  if(!isHymnFullscreen()){showControls(false);return;}
  if(viewer.classList.contains('controls-show'))hideControls();else showControls(false);
 }
-let pointerDown=false,pointerX=0,pointerY=0,pointerT=0;
-pages.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;pointerT=Date.now();try{pages.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault()});
-pages.addEventListener('pointermove',e=>{if(!pointerDown)return;const dx=e.clientX-pointerX,dy=e.clientY-pointerY;if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){hideControls();}});
+let pointerDown=false,pointerX=0,pointerY=0,pointerT=0,pointerScrollTop=0;
+pages.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;pointerT=Date.now();pointerScrollTop=pages.scrollTop;try{pages.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault()});
+pages.addEventListener('pointermove',e=>{if(!pointerDown)return;const dx=e.clientX-pointerX,dy=e.clientY-pointerY;if(Math.abs(dy)>8&&Math.abs(dy)>Math.abs(dx)){pages.scrollTop=pointerScrollTop-dy;}if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){hideControls();}});
 pages.addEventListener('pointerup',e=>{if(!pointerDown)return;pointerDown=false;const dx=e.clientX-pointerX,dy=e.clientY-pointerY,dt=Date.now()-pointerT;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.15&&dt<1200){hideControls();turnPage(dx<0?1:-1);e.preventDefault();return}if(Math.abs(dx)<14&&Math.abs(dy)<14){toggleControls();e.preventDefault()}});
 pages.addEventListener('pointercancel',()=>{pointerDown=false});
 pages.addEventListener('contextmenu',e=>e.preventDefault());
