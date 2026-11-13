@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.77-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.80-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -22,6 +22,8 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .folder-help{display:none;background:#fff;border:2px solid #f0c24b;border-radius:14px;margin:10px;padding:14px;text-align:center;color:#202a44}.folder-help.show{display:block}.folder-help b{display:block;font-size:17px;margin-bottom:7px}.folder-help p{margin:0 0 10px;line-height:1.5;color:#606a79}.folder-help button{border:0;background:#202a44;color:#fff;border-radius:10px;padding:11px 16px;font-weight:800;font-size:15px}.folder-ok{background:#eaf7ee;border:1px solid #9bd1aa;color:#27633a;border-radius:10px;padding:9px 12px;margin:8px 10px;display:none}.folder-ok.show{display:block}
 @media(max-width:650px){main{padding:12px}.today{grid-template-columns:repeat(2,1fr)}.search button{padding:0 14px;min-width:70px;white-space:nowrap}.pages{padding:2px}}
 
+/* V3.23.80: 전체화면에서만 확대 이동. 기존 크기와 여백은 변경하지 않음 */
+.viewer.fullscreen-mode .page-stage img{transform:translate(var(--pan-x,0px),var(--pan-y,0px)) scale(var(--zoom-scale,1));transform-origin:center center;will-change:transform;}
 /* V3.3 악보 스와이프 뷰어 */
 .viewer.open{display:block;position:fixed;inset:0;z-index:1000;background:var(--paper-color,#f7f7f5)!important;overflow:hidden}
 .viewer .toolbar{position:absolute;left:0;right:0;top:0;z-index:30;transform:translateY(-115%);transition:transform .22s ease;background:rgba(255,255,255,.97);box-shadow:0 3px 14px rgba(0,0,0,.18);padding:max(10px,env(safe-area-inset-top)) 12px 10px}
@@ -965,7 +967,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.77 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.80 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1072,6 +1074,7 @@ function getHymnSrc(path){
 function renderHymnPage(){
  const h=currentDisplayedHymn(); if(!h)return;
  currentPage=Math.max(0,Math.min(currentPage,h.pages.length-1));
+ resetScoreZoom();
  imageErrorShown=false; folderHelp.classList.remove('show'); pageImage.style.display='block';
  pageImage.alt=activePsalmScore?`${activePsalmScore.title} ${currentPage+1}페이지`:`${current}번 성가 ${currentPage+1}페이지`;
  pageImage.src=getHymnSrc(h.pages[currentPage]);
@@ -1108,6 +1111,7 @@ function openHymn(n,page=0,source='search',sequence=null){
  try{localStorage.setItem('lastHymn',n)}catch(e){}
 }
 function finishBack(){
+ resetScoreZoom();
  activePsalmScore=null;
  viewer.classList.remove('open','controls-show','schedule-mode','fullscreen-mode'); home.classList.remove('hidden'); document.documentElement.style.overflow='';document.body.style.overflow='';
  viewerSequence=[]; viewerSeqIndex=-1; clearTimeout(controlsTimer);
@@ -1151,7 +1155,7 @@ async function full(){
  if(isHymnFullscreen()){
    if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}}
    viewer.classList.remove('fullscreen-mode');
-   showControls(false); syncFullscreenButton();return;
+   resetScoreZoom(); showControls(false); syncFullscreenButton();return;
  }
  // 임베드/모바일 브라우저가 Fullscreen API를 막아도 뷰어 전용 모드로 동작
  viewer.classList.add('fullscreen-mode');
@@ -1176,14 +1180,89 @@ function toggleControls(){
  if(!isHymnFullscreen()){showControls(false);return;}
  if(viewer.classList.contains('controls-show'))hideControls();else showControls(false);
 }
-let pointerDown=false,pointerX=0,pointerY=0,pointerT=0;
-pages.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;pointerDown=true;pointerX=e.clientX;pointerY=e.clientY;pointerT=Date.now();try{pages.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault()});
-pages.addEventListener('pointermove',e=>{if(!pointerDown)return;const dx=e.clientX-pointerX,dy=e.clientY-pointerY;if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){hideControls();}});
-pages.addEventListener('pointerup',e=>{if(!pointerDown)return;pointerDown=false;const dx=e.clientX-pointerX,dy=e.clientY-pointerY,dt=Date.now()-pointerT;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.15&&dt<1200){hideControls();turnPage(dx<0?1:-1);e.preventDefault();return}if(Math.abs(dx)<14&&Math.abs(dy)<14){toggleControls();e.preventDefault()}});
-pages.addEventListener('pointercancel',()=>{pointerDown=false});
+// V3.23.80: 전체화면 전용 pinch-to-zoom + pan. 일반 보기에서는 기존 스와이프 유지.
+let scoreZoom=1,scorePanX=0,scorePanY=0;
+const scorePointers=new Map();
+let scoreGesture=null,scoreLastTap=0,scoreSuppressTap=false;
+function applyScoreZoom(){
+ pages.style.setProperty('--zoom-scale',String(scoreZoom));
+ pages.style.setProperty('--pan-x',scorePanX+'px');
+ pages.style.setProperty('--pan-y',scorePanY+'px');
+}
+function limitScorePan(){
+ const stage=pages.getBoundingClientRect();
+ const imgW=pageImage.clientWidth, imgH=pageImage.clientHeight;
+ const maxX=Math.max(0,(imgW*scoreZoom-stage.width)/2);
+ const maxY=Math.max(0,(imgH*scoreZoom-stage.height)/2);
+ scorePanX=Math.max(-maxX,Math.min(maxX,scorePanX));
+ scorePanY=Math.max(-maxY,Math.min(maxY,scorePanY));
+}
+function resetScoreZoom(){
+ scoreZoom=1;scorePanX=0;scorePanY=0;scorePointers.clear();scoreGesture=null;
+ scoreSuppressTap=false;applyScoreZoom();
+}
+function pointerDistance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function scorePoint(e){return {x:e.clientX,y:e.clientY}}
+pages.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ scorePointers.set(e.pointerId,scorePoint(e));
+ try{pages.setPointerCapture(e.pointerId)}catch(_){}
+ if(scorePointers.size===2 && isHymnFullscreen()){
+   const pts=[...scorePointers.values()];
+   scoreGesture={kind:'pinch',distance:Math.max(1,pointerDistance(pts[0],pts[1])),zoom:scoreZoom,panX:scorePanX,panY:scorePanY,centerX:(pts[0].x+pts[1].x)/2,centerY:(pts[0].y+pts[1].y)/2};
+   scoreSuppressTap=true;
+ }else if(scorePointers.size===1){
+   scoreGesture={kind:scoreZoom>1.001&&isHymnFullscreen()?'pan':'swipe',x:e.clientX,y:e.clientY,panX:scorePanX,panY:scorePanY,t:Date.now(),moved:false};
+ }
+ e.preventDefault();
+});
+pages.addEventListener('pointermove',e=>{
+ if(!scorePointers.has(e.pointerId))return;
+ scorePointers.set(e.pointerId,scorePoint(e));
+ if(!scoreGesture)return;
+ if(scorePointers.size>=2&&isHymnFullscreen()){
+   const pts=[...scorePointers.values()];
+   if(scoreGesture.kind!=='pinch'){
+     scoreGesture={kind:'pinch',distance:Math.max(1,pointerDistance(pts[0],pts[1])),zoom:scoreZoom,panX:scorePanX,panY:scorePanY,centerX:(pts[0].x+pts[1].x)/2,centerY:(pts[0].y+pts[1].y)/2};
+   }
+   const g=scoreGesture;
+   scoreZoom=Math.max(1,Math.min(3,g.zoom*pointerDistance(pts[0],pts[1])/g.distance));
+   scorePanX=g.panX+((pts[0].x+pts[1].x)/2-g.centerX);
+   scorePanY=g.panY+((pts[0].y+pts[1].y)/2-g.centerY);
+   limitScorePan();applyScoreZoom();e.preventDefault();return;
+ }
+ if(scoreGesture.kind==='pan'&&isHymnFullscreen()){
+   const g=scoreGesture;
+   scorePanX=g.panX+e.clientX-g.x;scorePanY=g.panY+e.clientY-g.y;
+   limitScorePan();applyScoreZoom();e.preventDefault();return;
+ }
+ if(scoreGesture.kind==='swipe'){
+   const dx=e.clientX-scoreGesture.x,dy=e.clientY-scoreGesture.y;
+   if(Math.abs(dx)>15&&Math.abs(dx)>Math.abs(dy)){hideControls();scoreGesture.moved=true;}
+ }
+});
+pages.addEventListener('pointerup',e=>{
+ if(!scorePointers.has(e.pointerId))return;
+ const g=scoreGesture;
+ scorePointers.delete(e.pointerId);
+ if(scorePointers.size){scoreGesture=null;e.preventDefault();return;}
+ scoreGesture=null;
+ if(scoreSuppressTap){scoreSuppressTap=false;e.preventDefault();return;}
+ if(!g||g.kind==='pinch'||g.kind==='pan'){e.preventDefault();return;}
+ const dx=e.clientX-g.x,dy=e.clientY-g.y,dt=Date.now()-g.t;
+ if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.15&&dt<1200){hideControls();turnPage(dx<0?1:-1);e.preventDefault();return;}
+ if(Math.abs(dx)<14&&Math.abs(dy)<14){
+   const now=Date.now();
+   if(isHymnFullscreen()&&now-scoreLastTap<320){resetScoreZoom();scoreLastTap=0;}
+   else{scoreLastTap=now;toggleControls();}
+   e.preventDefault();
+ }
+});
+pages.addEventListener('pointercancel',e=>{scorePointers.delete(e.pointerId);scoreGesture=null;scoreSuppressTap=false});
 pages.addEventListener('contextmenu',e=>e.preventDefault());
-document.addEventListener('keydown',e=>{if(!viewer.classList.contains('open'))return;if(e.key==='ArrowRight'||e.key==='PageDown')turnPage(1);if(e.key==='ArrowLeft'||e.key==='PageUp')turnPage(-1);if(e.key==='Escape'&&!document.fullscreenElement){if(isHymnFullscreen()){viewer.classList.remove('fullscreen-mode');showControls(false);syncFullscreenButton()}else back()}});
+document.addEventListener('keydown',e=>{if(!viewer.classList.contains('open'))return;if(e.key==='ArrowRight'||e.key==='PageDown')turnPage(1);if(e.key==='ArrowLeft'||e.key==='PageUp')turnPage(-1);if(e.key==='Escape'&&!document.fullscreenElement){if(isHymnFullscreen()){viewer.classList.remove('fullscreen-mode');resetScoreZoom();showControls(false);syncFullscreenButton()}else back()}});
 
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&viewer.classList.contains('fullscreen-mode')){viewer.classList.remove('fullscreen-mode');resetScoreZoom();showControls(false);syncFullscreenButton();}});
 let monthView='all';
 function songBoxes(d){
  const labels=['입당','봉헌','성체','파견'];

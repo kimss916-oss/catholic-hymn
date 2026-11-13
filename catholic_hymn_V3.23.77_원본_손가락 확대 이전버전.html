@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.78-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.77-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -30,7 +30,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .viewer .toolbar button{white-space:nowrap}
 .page-stage{position:absolute;inset:0;background:var(--paper-color,#f7f7f5)!important;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
 .page-stage{padding:clamp(6px,1vmin,12px) clamp(7px,1.2vmin,14px);box-sizing:border-box;background:var(--paper-color,#f7f7f5)!important}
-.page-stage img{display:block;max-width:99%;max-height:99%;width:auto;height:auto;object-fit:contain;background:transparent;-webkit-user-drag:none;box-shadow:none}
+.page-stage img{display:block;max-width:97%;max-height:97%;width:auto;height:auto;object-fit:contain;background:transparent;-webkit-user-drag:none;box-shadow:none}
 .page-indicator{position:absolute;z-index:25;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(20,28,46,.78);color:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;pointer-events:none;transition:opacity .2s}
 .viewer:not(.controls-show) .page-indicator{opacity:.35}
 .viewer .nav{position:absolute;z-index:30;left:0;right:0;bottom:0;transform:translateY(120%);transition:transform .22s ease;background:rgba(255,255,255,.97);padding:10px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));box-shadow:0 -3px 14px rgba(0,0,0,.15)}
@@ -48,7 +48,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 /* V3.14: Android 로컬/전체화면에서도 악보 주변 여백을 강제로 종이색으로 덮는다. */
 .page-stage{isolation:isolate;background:#f2f3f4!important;}
 .page-stage::before{content:"";position:absolute;inset:0;z-index:0;background:var(--paper-color,#f2f3f4)!important;pointer-events:none;}
-.page-stage img{position:relative;z-index:1;max-width:99%!important;max-height:99%!important;background:transparent!important;}
+.page-stage img{position:relative;z-index:1;max-width:97%!important;max-height:97%!important;background:transparent!important;}
 .viewer.open,.viewer:fullscreen,.viewer:-webkit-full-screen{background:#f2f3f4!important;}
 .viewer:fullscreen .page-stage::before,.viewer:-webkit-full-screen .page-stage::before{background:var(--paper-color,#f2f3f4)!important;}
 
@@ -59,7 +59,7 @@ main{padding:18px}.hero{background:#f7f8fb;border-radius:20px;padding:18px;margi
 .page-stage::before{background:#fff!important;}
 .viewer:fullscreen .page-stage,.viewer:-webkit-full-screen .page-stage,
 .viewer:fullscreen .page-stage::before,.viewer:-webkit-full-screen .page-stage::before{background:#fff!important;}
-.page-stage img{max-width:99%!important;max-height:99%!important;}
+.page-stage img{max-width:97%!important;max-height:97%!important;}
 
 
 /* V3.17: 가톨릭성가 분류별 검색 */
@@ -965,7 +965,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.63 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.77 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
