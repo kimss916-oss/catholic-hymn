@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.87-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.88-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -907,9 +907,9 @@ header p{color:#d6eae3 !important;}
 .psalm-result-year{font-weight:900;color:#075c4e;min-width:44px}
 @media(max-width:650px){.main-tabs .tab{font-size:12px!important;padding:12px 2px!important;letter-spacing:-.5px}.psalm-year-filters button{font-size:13px;padding:10px 2px}}
 
-/* V3.23.87: mobile single-row tabs, compact search, collapsible seasons */
+/* V3.23.88: mobile single-row tabs, compact search, collapsible seasons */
 .main-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
-.main-tabs .tab{min-width:0!important;white-space:nowrap!important;word-break:keep-all!important;font-size:clamp(10px,2.6vw,15px)!important;letter-spacing:-.55px!important;padding:12px 2px!important;line-height:1.25!important}
+.main-tabs .tab{min-width:0!important;white-space:nowrap!important;word-break:keep-all!important;font-size:clamp(13px,3.4vw,16px)!important;letter-spacing:-.25px!important;padding:12px 2px!important;line-height:1.25!important}
 .search{display:flex!important;align-items:stretch;gap:7px!important;min-width:0}
 .search input{box-sizing:border-box!important;width:0!important;min-width:0!important;flex:1 1 auto!important;font-size:clamp(14px,3.5vw,18px)!important;padding:11px 12px!important}
 .search button{box-sizing:border-box!important;min-width:55px!important;width:58px!important;flex:0 0 58px!important;padding:0 5px!important;font-size:15px!important}
@@ -920,12 +920,12 @@ header p{color:#d6eae3 !important;}
 .psalm-season-details[open] summary::before{content:'▾'}
 .psalm-season-details summary .psalm-season-hint{margin-left:auto;color:#72867c;font-size:12px;font-weight:500}
 .psalm-season-details .psalm-season-filters{padding:4px 10px 12px;margin-bottom:0}
-@media(max-width:390px){.main-tabs{gap:4px!important}.main-tabs .tab{font-size:10px!important;padding:11px 1px!important}}
+@media(max-width:390px){.main-tabs{gap:4px!important}.main-tabs .tab{font-size:12px!important;padding:11px 1px!important}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
 <section id="home" class="home">
-<div class="tabs main-tabs"><button id="mainTabSearch" class="tab active" onclick="showSearch()">🔎 성가 검색</button><button id="mainTabToday" class="tab" onclick="showToday()">📅 이달의 성가표</button><button id="mainTabPsalm" class="tab" onclick="showPsalmSearch()">🎼 화답송 검색</button><button id="mainTabStats" class="tab" onclick="showStats()">📊 통계</button></div>
+<div class="tabs main-tabs"><button id="mainTabSearch" class="tab active" onclick="showSearch()">🔎 성가 검색</button><button id="mainTabToday" class="tab" onclick="showToday()">📅 이달의 성가</button><button id="mainTabPsalm" class="tab" onclick="showPsalmSearch()">🎼 화답송 검색</button><button id="mainTabStats" class="tab" onclick="showStats()">📊 통계</button></div>
 <div id="searchPanel" class="main-panel">
 <div class="hero">
 <div class="search"><input id="q" placeholder="성가번호 또는 제목" autocomplete="off"><button onclick="search()">검색</button></div>
@@ -1001,7 +1001,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.87 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.88 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
