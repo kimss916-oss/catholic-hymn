@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.80-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.81-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -967,7 +967,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.80 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.81 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1233,6 +1233,7 @@ pages.addEventListener('pointermove',e=>{
  }
  if(scoreGesture.kind==='pan'&&isHymnFullscreen()){
    const g=scoreGesture;
+   if(Math.hypot(e.clientX-g.x,e.clientY-g.y)>12)g.moved=true;
    scorePanX=g.panX+e.clientX-g.x;scorePanY=g.panY+e.clientY-g.y;
    limitScorePan();applyScoreZoom();e.preventDefault();return;
  }
@@ -1248,7 +1249,15 @@ pages.addEventListener('pointerup',e=>{
  if(scorePointers.size){scoreGesture=null;e.preventDefault();return;}
  scoreGesture=null;
  if(scoreSuppressTap){scoreSuppressTap=false;e.preventDefault();return;}
- if(!g||g.kind==='pinch'||g.kind==='pan'){e.preventDefault();return;}
+ if(!g||g.kind==='pinch'){e.preventDefault();return;}
+ if(g.kind==='pan'){
+   if(!g.moved && Math.hypot(e.clientX-g.x,e.clientY-g.y)<14){
+     const now=Date.now();
+     if(isHymnFullscreen() && now-scoreLastTap<380){resetScoreZoom();scoreLastTap=0;}
+     else{scoreLastTap=now;toggleControls();}
+   }else{scoreLastTap=0;}
+   e.preventDefault();return;
+ }
  const dx=e.clientX-g.x,dy=e.clientY-g.y,dt=Date.now()-g.t;
  if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.15&&dt<1200){hideControls();turnPage(dx<0?1:-1);e.preventDefault();return;}
  if(Math.abs(dx)<14&&Math.abs(dy)<14){
