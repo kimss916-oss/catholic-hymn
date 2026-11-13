@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.81-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.85-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -891,11 +891,25 @@ header p{color:#d6eae3 !important;}
     font-size:19px !important;
   }
 }
+
+/* V3.23.83: 전례 시기 필터 추가 */
+.psalm-filter-caption{font-size:13px;font-weight:800;color:#64766c;margin:5px 2px 8px}
+.psalm-season-filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.psalm-season-filters button{border:1px solid #cbd9d2;background:#fff;color:#075c4e;border-radius:10px;padding:11px 3px;font-size:14px;font-weight:800;cursor:pointer}
+.psalm-season-filters button.active{background:#075c4e;color:white}
+@media(max-width:650px){.psalm-season-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* V3.23.82: 화답송 검색 (기존 검색/뷰어 유지) */
+.main-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.psalm-year-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.psalm-year-filters button{border:1px solid #cbd9d2;background:white;color:#075c4e;border-radius:10px;padding:11px 3px;font-weight:800;font-size:14px}
+.psalm-year-filters button.active{background:#075c4e;color:#fff}
+.psalm-result-year{font-weight:900;color:#075c4e;min-width:44px}
+@media(max-width:650px){.main-tabs .tab{font-size:12px!important;padding:12px 2px!important;letter-spacing:-.5px}.psalm-year-filters button{font-size:13px;padding:10px 2px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
 <section id="home" class="home">
-<div class="tabs main-tabs"><button id="mainTabSearch" class="tab active" onclick="showSearch()">🔎 성가 검색</button><button id="mainTabToday" class="tab" onclick="showToday()">📅 이달의 성가표</button><button id="mainTabStats" class="tab" onclick="showStats()">📊 통계</button></div>
+<div class="tabs main-tabs"><button id="mainTabSearch" class="tab active" onclick="showSearch()">🔎 성가 검색</button><button id="mainTabToday" class="tab" onclick="showToday()">📅 이달의 성가표</button><button id="mainTabPsalm" class="tab" onclick="showPsalmSearch()">🎼 화답송 검색</button><button id="mainTabStats" class="tab" onclick="showStats()">📊 통계</button></div>
 <div id="searchPanel" class="main-panel">
 <div class="hero">
 <div class="search"><input id="q" placeholder="성가번호 또는 제목" autocomplete="off"><button onclick="search()">검색</button></div>
@@ -910,6 +924,10 @@ header p{color:#d6eae3 !important;}
 </div>
 <div id="categoryResultHead" class="category-result-head" style="display:none"></div>
 <div id="results" class="results"></div>
+</div>
+<div id="psalmSearchPanel" class="main-panel" hidden>
+ <div class="hero"><div class="search"><input id="psalmQuery" placeholder="전례일 검색 (예: 연중 33, 대림)" autocomplete="off" oninput="renderPsalmSearch()"><button type="button" onclick="renderPsalmSearch()">검색</button></div><div class="note" id="psalmSearchInfo">등록된 화답송 악보를 검색합니다.</div></div>
+ <div id="psalmYearFilters" class="psalm-year-filters"></div><div class="psalm-filter-caption">전례 시기 · 축일</div><div id="psalmSeasonFilters" class="psalm-season-filters"></div><div id="psalmSearchResults" class="results"></div>
 </div>
 <div id="todayPanel" class="main-panel" hidden>
   <div class="month-nav-card">
@@ -967,7 +985,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.81 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.85 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -2420,6 +2438,95 @@ window.addEventListener('message',function(event){
   if(event.data?.type!=='PUNG_MU_NAV')return;
   pungMuSwitchTab(event.data.tab);
 });
+
+/* V3.23.82: 검색 전용 읽기 기능. 목록은 manifest.json 우선, 기존 날짜 매핑은 폴백. */
+let psalmSearchYear='전체';
+let psalmSearchSeason='전체';
+let psalmSearchManifest=[];
+let psalmSearchLoaded=false;
+let psalmSearchLoading=false;
+let psalmSearchError='';
+const PSALM_SEARCH_FOLDERS={'year-a':'가해','year-b':'나해','year-c':'다해','common':'공통'};
+function psalmSearchEntries(){
+ const map=new Map();
+ const add=(folder,file)=>{
+  if(!PSALM_SEARCH_FOLDERS[folder]||!file||!/^.+\.webp$/i.test(file))return;
+  const key=folder+'/'+file;
+  if(!map.has(key))map.set(key,{folder,file,title:file.replace(/\.webp$/i,'').replace(/_(가해|나해|다해|공통)$/,'').replace(/_/g,' '),year:PSALM_SEARCH_FOLDERS[folder]});
+ };
+ for(const entry of psalmSearchManifest)add(entry.folder,entry.file);
+ for(const v of Object.values(PSALM_ASSETS))if(Array.isArray(v))add(v[0],v[1]);
+ return [...map.values()].sort((a,b)=>a.year.localeCompare(b.year,'ko')||a.title.localeCompare(b.title,'ko',{numeric:true}));
+}
+function psalmSearchSeasonOf(title){
+ const t=String(title).replace(/\s+/g,'');
+ if(/대림/.test(t))return '대림';
+ if(/성탄|주님공현|주님세례/.test(t))return '성탄';
+ if(/사순|재의수요일|주님수난|성주간|성목요일|성금요일|성토요일/.test(t))return '사순';
+ if(/부활|성령강림|주님승천/.test(t))return '부활';
+ if(/대축일|축일|기념일|한가위|설|위령|순교자/.test(t))return '축일';
+ return '기타';
+}
+function psalmSearchEscape(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function selectPsalmSearchFilter(kind,value){
+ if(kind==='year')psalmSearchYear=value;
+ if(kind==='season')psalmSearchSeason=value;
+ renderPsalmSearch();
+}
+function renderPsalmSearch(){
+ const filters=document.getElementById('psalmYearFilters'),seasons=document.getElementById('psalmSeasonFilters'),out=document.getElementById('psalmSearchResults');if(!filters||!out)return;
+ filters.innerHTML=['전체','가해','나해','다해','공통'].map(y=>`<button type="button" class="${psalmSearchYear===y?'active':''}" onclick="selectPsalmSearchFilter('year',${JSON.stringify(y)})">${y}</button>`).join('');
+ if(seasons)seasons.innerHTML=['전체','대림','성탄','사순','부활','축일'].map(y=>`<button type="button" class="${psalmSearchSeason===y?'active':''}" onclick="selectPsalmSearchFilter('season',${JSON.stringify(y)})">${y}</button>`).join('');
+ const q=(document.getElementById('psalmQuery')?.value||'').replace(/\s+/g,'').toLowerCase();
+ const entries=psalmSearchEntries().filter(e=>(psalmSearchYear==='전체'||e.year===psalmSearchYear)&&(psalmSearchSeason==='전체'||psalmSearchSeasonOf(e.title)===psalmSearchSeason)&&(!q||(e.title+e.year).replace(/\s+/g,'').toLowerCase().includes(q)));
+ const info=document.getElementById('psalmSearchInfo');
+ if(info)info.textContent=`검색 결과 ${entries.length}건 · ${psalmSearchLoaded?'GitHub 악보 '+psalmSearchManifest.length+'건 조회 완료 · 날짜 매핑 포함':psalmSearchLoading?'GitHub 전체 목록 불러오는 중':psalmSearchError?'전체 목록 조회 실패 · 기존 매핑만 표시':'날짜별 등록 매핑 기준'}`;
+ out.innerHTML=entries.map(e=>`<button type="button" class="item" data-psalm-folder="${psalmSearchEscape(e.folder)}" data-psalm-file="${psalmSearchEscape(e.file)}"><span class="psalm-result-year">${e.year}</span><span><span class="title">${psalmSearchEscape(e.title)}</span><span class="sub">악보 바로보기</span></span></button>`).join('')||'<div class="note">선택한 분류에 해당하는 악보가 없습니다. 다른 전례주기나 시기를 선택해 주세요.</div>';
+ if(psalmSearchError)out.insertAdjacentHTML('afterbegin',`<div class="note">전체 악보 목록 조회에 실패했습니다. 네트워크를 확인한 뒤 <button type="button" onclick="loadPsalmSearchManifest()">다시 불러오기</button><br><small>${psalmSearchEscape(psalmSearchError)}</small></div>`);
+ out.querySelectorAll('[data-psalm-folder]').forEach(b=>b.addEventListener('click',()=>openPsalmSearchScore(b.dataset.psalmFolder,b.dataset.psalmFile)));
+}
+function openPsalmSearchScore(folder,file){
+ const entry=psalmSearchEntries().find(e=>e.folder===folder&&e.file===file);if(!entry)return;
+ if(!viewer.classList.contains('open'))returnScrollY=window.scrollY||0;
+ activePsalmScore={title:`${entry.title} (${entry.year}) · 화답송`,pages:['responsorial-psalm/'+folder+'/'+encodeURIComponent(file)]};
+ currentPage=0;viewerSource='psalm-search';viewerSequence=[];viewerSeqIndex=-1;
+ home.classList.add('hidden');viewer.classList.add('open');viewer.classList.add('schedule-mode');
+ document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';
+ renderHymnPage();showControls(false);
+}
+function showPsalmSearch(){
+ openMainPanel('psalmSearchPanel');setMainTab('mainTabPsalm');
+ renderPsalmSearch();if(!psalmSearchLoaded)loadPsalmSearchManifest();
+}
+async function loadPsalmSearchManifest(){
+ if(psalmSearchLoaded||psalmSearchLoading)return;
+ psalmSearchLoading=true;psalmSearchError='';renderPsalmSearch();
+ try{
+  // Read-only public GitHub Contents API: no token or administrator permission required.
+  const folders=['year-a','year-b','year-c','common'];
+  const results=await Promise.all(folders.map(async folder=>{
+   const url='https://api.github.com/repos/kimss916-oss/catholic-hymn/contents/responsorial-psalm/'+folder+'?ref=main';
+   const response=await fetch(url,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
+   if(response.status===404)return [];
+   if(!response.ok)throw Error(folder+' GitHub HTTP '+response.status);
+   const data=await response.json();
+   if(!Array.isArray(data))throw Error(folder+' 목록 응답 오류');
+   return data.filter(x=>x.type==='file'&&/\.webp$/i.test(x.name)).map(x=>({folder,file:x.name}));
+  }));
+  psalmSearchManifest=results.flat();
+  psalmSearchLoaded=true;
+ }catch(error){
+  // Optional local manifest fallback for GitHub API rate limits or blocked API access.
+  try{
+   const response=await fetch('responsorial-psalm/manifest.json',{cache:'no-store'});
+   if(!response.ok)throw Error('manifest.json 없음');
+   const data=await response.json();
+   const items=Array.isArray(data)?data:(Array.isArray(data.files)?data.files:[]);
+   psalmSearchManifest=items.map(x=>typeof x==='string'?{folder:x.split('/')[0],file:x.split('/').slice(1).join('/')}:{folder:x.folder,file:x.file||x.filename}).filter(x=>x.folder&&x.file);
+   psalmSearchLoaded=true;
+  }catch(_){psalmSearchError=String(error.message||error);}
+ }finally{psalmSearchLoading=false;renderPsalmSearch();}
+}
 </script>
 <script>
 /* V3.23.40 TEST: 통합 PWA 내부 iframe에서만 권한 응답 수신 */
