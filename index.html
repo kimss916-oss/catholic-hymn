@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.85-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.87-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -903,8 +903,24 @@ header p{color:#d6eae3 !important;}
 .psalm-year-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:14px}
 .psalm-year-filters button{border:1px solid #cbd9d2;background:white;color:#075c4e;border-radius:10px;padding:11px 3px;font-weight:800;font-size:14px}
 .psalm-year-filters button.active{background:#075c4e;color:#fff}
+.psalm-year-filters button,.psalm-season-filters button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;cursor:pointer}
 .psalm-result-year{font-weight:900;color:#075c4e;min-width:44px}
 @media(max-width:650px){.main-tabs .tab{font-size:12px!important;padding:12px 2px!important;letter-spacing:-.5px}.psalm-year-filters button{font-size:13px;padding:10px 2px}}
+
+/* V3.23.87: mobile single-row tabs, compact search, collapsible seasons */
+.main-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+.main-tabs .tab{min-width:0!important;white-space:nowrap!important;word-break:keep-all!important;font-size:clamp(10px,2.6vw,15px)!important;letter-spacing:-.55px!important;padding:12px 2px!important;line-height:1.25!important}
+.search{display:flex!important;align-items:stretch;gap:7px!important;min-width:0}
+.search input{box-sizing:border-box!important;width:0!important;min-width:0!important;flex:1 1 auto!important;font-size:clamp(14px,3.5vw,18px)!important;padding:11px 12px!important}
+.search button{box-sizing:border-box!important;min-width:55px!important;width:58px!important;flex:0 0 58px!important;padding:0 5px!important;font-size:15px!important}
+.psalm-season-details{margin:4px 0 14px;border:1px solid #d6e1dc;border-radius:11px;background:#fff;overflow:hidden}
+.psalm-season-details summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;color:#075c4e;font-size:14px;font-weight:800;user-select:none}
+.psalm-season-details summary::-webkit-details-marker{display:none}
+.psalm-season-details summary::before{content:'▸';margin-right:8px}
+.psalm-season-details[open] summary::before{content:'▾'}
+.psalm-season-details summary .psalm-season-hint{margin-left:auto;color:#72867c;font-size:12px;font-weight:500}
+.psalm-season-details .psalm-season-filters{padding:4px 10px 12px;margin-bottom:0}
+@media(max-width:390px){.main-tabs{gap:4px!important}.main-tabs .tab{font-size:10px!important;padding:11px 1px!important}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -927,7 +943,7 @@ header p{color:#d6eae3 !important;}
 </div>
 <div id="psalmSearchPanel" class="main-panel" hidden>
  <div class="hero"><div class="search"><input id="psalmQuery" placeholder="전례일 검색 (예: 연중 33, 대림)" autocomplete="off" oninput="renderPsalmSearch()"><button type="button" onclick="renderPsalmSearch()">검색</button></div><div class="note" id="psalmSearchInfo">등록된 화답송 악보를 검색합니다.</div></div>
- <div id="psalmYearFilters" class="psalm-year-filters"></div><div class="psalm-filter-caption">전례 시기 · 축일</div><div id="psalmSeasonFilters" class="psalm-season-filters"></div><div id="psalmSearchResults" class="results"></div>
+ <div id="psalmYearFilters" class="psalm-year-filters"></div><details class="psalm-season-details"><summary>전례 시기 · 축일 <span class="psalm-season-hint">펼치기 / 닫기</span></summary><div id="psalmSeasonFilters" class="psalm-season-filters"></div></details><div id="psalmSearchResults" class="results"></div>
 </div>
 <div id="todayPanel" class="main-panel" hidden>
   <div class="month-nav-card">
@@ -985,7 +1001,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.85 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.87 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -2475,8 +2491,10 @@ function selectPsalmSearchFilter(kind,value){
 }
 function renderPsalmSearch(){
  const filters=document.getElementById('psalmYearFilters'),seasons=document.getElementById('psalmSeasonFilters'),out=document.getElementById('psalmSearchResults');if(!filters||!out)return;
- filters.innerHTML=['전체','가해','나해','다해','공통'].map(y=>`<button type="button" class="${psalmSearchYear===y?'active':''}" onclick="selectPsalmSearchFilter('year',${JSON.stringify(y)})">${y}</button>`).join('');
- if(seasons)seasons.innerHTML=['전체','대림','성탄','사순','부활','축일'].map(y=>`<button type="button" class="${psalmSearchSeason===y?'active':''}" onclick="selectPsalmSearchFilter('season',${JSON.stringify(y)})">${y}</button>`).join('');
+ filters.innerHTML=['전체','가해','나해','다해','공통'].map(y=>`<button type="button" class="${psalmSearchYear===y?'active':''}" data-psalm-filter="year" data-psalm-value="${y}">${y}</button>`).join('');
+ if(seasons)seasons.innerHTML=['전체','대림','성탄','사순','부활','축일'].map(y=>`<button type="button" class="${psalmSearchSeason===y?'active':''}" data-psalm-filter="season" data-psalm-value="${y}">${y}</button>`).join('');
+ // Direct listeners avoid inline-handler scope and are reattached after rendering.
+ [filters,seasons].filter(Boolean).forEach(group=>group.querySelectorAll('[data-psalm-filter]').forEach(button=>{button.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();selectPsalmSearchFilter(this.dataset.psalmFilter,this.dataset.psalmValue);});}));
  const q=(document.getElementById('psalmQuery')?.value||'').replace(/\s+/g,'').toLowerCase();
  const entries=psalmSearchEntries().filter(e=>(psalmSearchYear==='전체'||e.year===psalmSearchYear)&&(psalmSearchSeason==='전체'||psalmSearchSeasonOf(e.title)===psalmSearchSeason)&&(!q||(e.title+e.year).replace(/\s+/g,'').toLowerCase().includes(q)));
  const info=document.getElementById('psalmSearchInfo');
