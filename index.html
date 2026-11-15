@@ -2568,4 +2568,14 @@ async function loadPsalmSearchManifest(){
 <style>
 </style>
 
-<script>window.addEventListener("load",()=>{verifyPsalmAssets();refreshPsalmButtons();psalmLoadRemote();});</script></body></html>
+<script>window.addEventListener("load",()=>{verifyPsalmAssets();refreshPsalmButtons();psalmLoadRemote();});</script><script>
+/* 성시간 예식서 링크: ?hymn=205 -> 해당 악보 바로보기 */
+window.addEventListener('load',function(){
+  const params=new URLSearchParams(window.location.search);
+  const n=Number(params.get('hymn'));
+  if(!Number.isInteger(n)||n<1||n>528)return;
+  if(typeof hymns==='undefined'||!hymns[n]||typeof openHymn!=='function')return;
+  openHymn(n,0,'search');
+});
+</script>
+</body></html>
