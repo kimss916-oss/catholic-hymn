@@ -921,6 +921,9 @@ header p{color:#d6eae3 !important;}
 .psalm-season-details summary .psalm-season-hint{margin-left:auto;color:#72867c;font-size:12px;font-weight:500}
 .psalm-season-details .psalm-season-filters{padding:4px 10px 12px;margin-bottom:0}
 @media(max-width:390px){.main-tabs{gap:4px!important}.main-tabs .tab{font-size:12px!important;padding:11px 1px!important}}
+
+/* 예식서 연동: 악보 컨트롤 숨김과 무관하게 항상 보이는 복귀 버튼 */
+#holyHourReturnFixed{position:absolute;z-index:110;top:max(12px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));border:1px solid #9ab8ac;border-radius:8px;background:rgba(255,255,255,.96);color:#075c4e;padding:8px 11px;font-size:13px;font-weight:750;line-height:1.2;box-shadow:0 1px 5px #0002;cursor:pointer}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -2587,7 +2590,7 @@ function holyHourReturnUrl(){
   if(!raw)return null;
   try{
     const url=new URL(raw);
-    if(url.protocol!=='https:' && url.protocol!=='http:')return null;
+    if(!['https:','http:','file:'].includes(url.protocol))return null;
     return url.href;
   }catch(e){return null;}
 }
@@ -2599,5 +2602,14 @@ function returnToHolyHourOrHome(){
 window.addEventListener('load',function(){
   const btn=document.getElementById('viewerBackButton');
   if(btn && holyHourReturnUrl())btn.textContent='‹ 예식서로';
+  if(holyHourReturnUrl()){
+    const floating=document.createElement('button');
+    floating.id='holyHourReturnFixed';
+    floating.type='button';
+    floating.textContent='‹ 예식서로';
+    floating.setAttribute('aria-label','성시간 예식서로 돌아가기');
+    floating.onclick=function(e){e.stopPropagation();returnToHolyHourOrHome();};
+    document.getElementById('viewer').appendChild(floating);
+  }
 });
 </script></body></html>
