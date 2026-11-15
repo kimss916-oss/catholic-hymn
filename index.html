@@ -1004,7 +1004,7 @@ header p{color:#d6eae3 !important;}
 <footer class="app-version-footer" aria-label="앱 버전">V3.23.88 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
-<div class="toolbar"><button onclick="back();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
+<div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
 <div id="folderHelp" class="folder-help"></div>
 <div id="pages" class="page-stage"><img id="pageImage" alt="악보"></div>
 <div id="pageIndicator" class="page-indicator"></div>
@@ -2578,4 +2578,26 @@ window.addEventListener('load',function(){
   openHymn(n,0,'search');
 });
 </script>
-</body></html>
+<script>
+/* 예식서에서 직접 열었을 때만 돌아가기 버튼 표시 */
+function holyHourReturnUrl(){
+  const params=new URLSearchParams(window.location.search);
+  if(!params.has('hymn'))return null;
+  const raw=params.get('return');
+  if(!raw)return null;
+  try{
+    const url=new URL(raw);
+    if(url.protocol!=='https:' && url.protocol!=='http:')return null;
+    return url.href;
+  }catch(e){return null;}
+}
+function returnToHolyHourOrHome(){
+  const url=holyHourReturnUrl();
+  if(url){window.location.assign(url);return;}
+  back();
+}
+window.addEventListener('load',function(){
+  const btn=document.getElementById('viewerBackButton');
+  if(btn && holyHourReturnUrl())btn.textContent='‹ 예식서로';
+});
+</script></body></html>
