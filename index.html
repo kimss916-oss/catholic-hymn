@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.88-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.89-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1004,7 +1004,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.88 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.89 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1144,14 +1144,14 @@ function openHymn(n,page=0,source='search',sequence=null){
  viewerSequence=Array.isArray(sequence)?sequence.map(Number).filter(x=>hymns[x]):[];
  viewerSeqIndex=viewerSequence.indexOf(Number(n));
  home.classList.add('hidden'); viewer.classList.add('open'); viewer.classList.toggle('schedule-mode',viewerSource==='schedule');
- document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; renderHymnPage(); showControls(false);
+ document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden'; renderHymnPage(); showControls(false); syncFullscreenButton();
  try{localStorage.setItem('lastHymn',n)}catch(e){}
 }
 function finishBack(){
  resetScoreZoom();
  activePsalmScore=null;
  viewer.classList.remove('open','controls-show','schedule-mode','fullscreen-mode'); home.classList.remove('hidden'); document.documentElement.style.overflow='';document.body.style.overflow='';
- viewerSequence=[]; viewerSeqIndex=-1; clearTimeout(controlsTimer);
+ viewerSequence=[]; viewerSeqIndex=-1; clearTimeout(controlsTimer); syncFullscreenButton();
  requestAnimationFrame(()=>{window.scrollTo(0,returnScrollY); requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')))});
 }
 async function back(){
@@ -1183,7 +1183,7 @@ function turnPage(d){
  }
  moveHymn(d>0?1:-1);
 }
-function isHymnFullscreen(){return !!document.fullscreenElement || viewer.classList.contains('fullscreen-mode')}
+function isHymnFullscreen(){return viewer.classList.contains('open') && (!!document.fullscreenElement || viewer.classList.contains('fullscreen-mode'))}
 function syncFullscreenButton(){
  const btn=viewer.querySelector('.toolbar button:last-child');
  if(btn)btn.textContent=isHymnFullscreen()?'전체화면 종료':'전체화면';
@@ -1892,7 +1892,7 @@ function openPsalm(date, ev, forcePreview=false){
  home.classList.add('hidden');viewer.classList.add('open','schedule-mode');
  viewer.classList.remove('fullscreen-mode');
  document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';
- renderHymnPage();showControls(false);
+ renderHymnPage();showControls(false);syncFullscreenButton();
 }
 function verifyPsalmAssets(){
  Object.keys(PSALM_ASSETS).forEach(date=>{
