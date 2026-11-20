@@ -1053,6 +1053,7 @@ let viewerSequence=[];
 let viewerSeqIndex=-1;
 const pageImage=document.getElementById('pageImage');
 const pageIndicator=document.getElementById('pageIndicator');
+let favoriteTab='all',favoriteEnabled=false,favoriteNumbers=new Set(),favoriteBusy=new Set();
 renderDefault();
 q.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
 q.addEventListener('input',()=>search());
@@ -2704,7 +2705,6 @@ window.addEventListener('load',function(){
 </script>
 <script>
 /* V3.23.92: 로그인 사용자별 성가 즐겨찾기 */
-let favoriteTab='all',favoriteEnabled=false,favoriteNumbers=new Set(),favoriteBusy=new Set();
 function favoriteRow(h){
  if(!h)return '';
  const n=Number(h.number),star=favoriteEnabled?`<button type="button" class="fav-star ${favoriteNumbers.has(n)?'selected':''}" aria-label="${n}번 즐겨찾기 ${favoriteNumbers.has(n)?'해제':'등록'}" onclick="toggleFavorite(${n})" ${favoriteBusy.has(n)?'disabled':''}>${favoriteNumbers.has(n)?'★':'☆'}</button>`:'';
