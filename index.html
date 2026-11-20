@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.90-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.91-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -982,8 +982,8 @@ header p{color:#d6eae3 !important;}
  <label class="hymn-edit-field">봉헌<input id="hymnEditOffertory" inputmode="text" autocomplete="off"></label>
  <label class="hymn-edit-field">성체<input id="hymnEditCommunion" inputmode="text" autocomplete="off"></label>
  <label class="hymn-edit-field">파견<input id="hymnEditRecessional" inputmode="text" autocomplete="off"></label>
- <p>여러 곡은 쉼표로 구분합니다. 예: 210, 211<br>1단계 화면 테스트 중이므로 저장은 비활성화되어 있습니다.</p>
- <div class="hymn-edit-actions"><button type="button" onclick="closeHymnEdit()">닫기</button><button type="button" disabled title="서버 권한 및 저장 연동 후 활성화">저장 (연동 예정)</button></div>
+ <p>여러 곡은 쉼표로 구분합니다. 예: 210, 211<br>변경 내용은 해당 날짜에만 저장됩니다.</p><p id="hymnEditStatus" role="status" aria-live="polite"></p>
+ <div class="hymn-edit-actions"><button type="button" onclick="closeHymnEdit()">닫기</button><button type="button" id="hymnEditSaveButton" onclick="saveHymnEdit()">저장</button></div>
  </div></div>
 </div>
 
@@ -1021,7 +1021,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.89 TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.91 TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1957,25 +1957,80 @@ function openFutureMassHymn(n,date,mode){
  accompMassOpen=mode==='accomp'&&accompMassAuthorized;
  openHymn(n,0,'schedule',dayHymnSequence(d,true));
 }
-// 테스트 URL에 ?hymnEditPreview=1 을 붙인 경우에만 수정 UI 노출.
-// 권한 검증 및 저장 연결 전에는 일반 사용자에게 수정 버튼을 노출하지 않음.
-const hymnEditPreview=new URLSearchParams(location.search).get('hymnEditPreview')==='1';
-function openHymnEdit(date){
- const d=monthlyData.days.find(x=>x.date===date);
- if(!hymnEditPreview||!d)return;
- document.getElementById('hymnEditTitle').textContent=date+' 성가 수정';
- document.getElementById('hymnEditInfo').textContent=d.liturgy||'';
- for(const [id,key] of [['hymnEditEntrance','입당'],['hymnEditOffertory','봉헌'],['hymnEditCommunion','성체'],['hymnEditRecessional','파견']]){
-  document.getElementById(id).value=(d.songs?.[key]||[]).join(', ');
- }
- document.getElementById('hymnEditModal').hidden=false;
+/* V3.23.91: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
+let hymnEditAccess={canEdit:false,full:false,today:''};
+let hymnEditCurrentDate='',hymnEditExpected=null,hymnEditLoading=false;
+const hymnEditPending=new Map();
+function hymnEditRequest(type,payload={},timeout=30000){
+ return new Promise((resolve,reject)=>{
+  if(window.parent===window){reject(new Error('성가표 수정은 로그인된 풍무동성당 통합 앱에서만 가능합니다.'));return;}
+  const requestId='he-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  const timer=setTimeout(()=>{hymnEditPending.delete(requestId);reject(new Error('서버 응답 시간이 초과되었습니다.'));},timeout);
+  hymnEditPending.set(requestId,{resolve,reject,timer});
+  window.parent.postMessage({channel:'PUNGMU_ACCOMP_V1',type,requestId,payload},'*');
+ });
 }
-function closeHymnEdit(){document.getElementById('hymnEditModal').hidden=true;}
+window.addEventListener('message',event=>{
+ if(event.source!==window.parent)return;
+ if(event.origin!=='https://script.google.com'&&event.origin!=='https://script.googleusercontent.com'&&!event.origin.endsWith('.googleusercontent.com'))return;
+ const m=event.data;
+ if(!m||m.channel!=='PUNGMU_ACCOMP_V1'||!['HYMN_EDIT_ACCESS_RESULT','HYMN_EDIT_GET_RESULT','HYMN_EDIT_SAVE_RESULT'].includes(m.type))return;
+ const p=hymnEditPending.get(m.requestId);if(!p)return;
+ clearTimeout(p.timer);hymnEditPending.delete(m.requestId);p.resolve(m);
+});
+function hymnEditAllowed(date){return hymnEditAccess.canEdit&&(hymnEditAccess.full||date===hymnEditAccess.today);}
+async function refreshHymnEditAccess(){
+ try{
+  const r=await hymnEditRequest('HYMN_EDIT_ACCESS');
+  hymnEditAccess=r.ok&&r.canEdit?{canEdit:true,full:r.full===true,today:r.today||''}:{canEdit:false,full:false,today:''};
+ }catch(_){hymnEditAccess={canEdit:false,full:false,today:''};}
+ renderMonthList();
+}
+window.addEventListener('load',()=>{if(window.parent!==window)setTimeout(refreshHymnEditAccess,500);});
+function hymnEditStatus(message){document.getElementById('hymnEditStatus').textContent=message||'';}
+async function openHymnEdit(date){
+ if(!hymnEditAllowed(date)||hymnEditLoading)return;
+ hymnEditCurrentDate=date;hymnEditExpected=null;hymnEditLoading=true;
+ const modal=document.getElementById('hymnEditModal');modal.hidden=false;
+ document.getElementById('hymnEditTitle').textContent=date+' 성가 수정';
+ document.getElementById('hymnEditInfo').textContent='기존 성가표 조회 중…';
+ document.getElementById('hymnEditSaveButton').disabled=true;
+ hymnEditStatus('');
+ try{
+  const r=await hymnEditRequest('HYMN_EDIT_GET',{date});
+  if(!r.ok||!r.row)throw new Error(r.message||'조회 실패');
+  if(hymnEditCurrentDate!==date)return;
+  const d=r.row;
+  hymnEditExpected={ENTRANCE:d.ENTRANCE||'',OFFERTORY:d.OFFERTORY||'',COMMUNION:d.COMMUNION||'',RECESSIONAL:d.RECESSIONAL||''};
+  for(const [id,key] of [['hymnEditEntrance','ENTRANCE'],['hymnEditOffertory','OFFERTORY'],['hymnEditCommunion','COMMUNION'],['hymnEditRecessional','RECESSIONAL']])document.getElementById(id).value=d[key]||'';
+  document.getElementById('hymnEditInfo').textContent=d.LITURGY||'';
+  document.getElementById('hymnEditSaveButton').disabled=false;
+ }catch(e){hymnEditStatus('조회 실패: '+(e.message||e));}
+ finally{hymnEditLoading=false;}
+}
+function closeHymnEdit(){document.getElementById('hymnEditModal').hidden=true;hymnEditCurrentDate='';hymnEditExpected=null;}
+async function saveHymnEdit(){
+ const date=hymnEditCurrentDate;
+ if(!date||!hymnEditExpected||!hymnEditAllowed(date)||hymnEditLoading)return;
+ const changes={ENTRANCE:document.getElementById('hymnEditEntrance').value,OFFERTORY:document.getElementById('hymnEditOffertory').value,COMMUNION:document.getElementById('hymnEditCommunion').value,RECESSIONAL:document.getElementById('hymnEditRecessional').value};
+ for(const [k,v] of Object.entries(changes))if(v.trim()&&!/^\d{1,3}(\s*,\s*\d{1,3})*$/.test(v.trim())){hymnEditStatus(k+' 성가번호를 쉼표로 구분해 입력해 주세요.');return;}
+ if(!confirm(date+' 성가표를 저장하시겠습니까?'))return;
+ hymnEditLoading=true;document.getElementById('hymnEditSaveButton').disabled=true;hymnEditStatus('저장 중…');
+ try{
+  const r=await hymnEditRequest('HYMN_EDIT_SAVE',{date,changes,expected:hymnEditExpected},45000);
+  if(!r.ok)throw new Error(r.message||'저장 실패');
+  // 저장 결과는 서버 원본 재조회로 확인하며, 원격 월 캐시를 비워 즉시 갱신한다.
+  hymnScheduleLoaded.delete(monthlyData.year+'-'+monthlyData.month);
+  await loadHymnScheduleMonth(monthlyData.year,monthlyData.month);
+  if(hymnEditCurrentDate===date){closeHymnEdit();alert(r.changed?'성가표가 저장되었습니다.':'변경된 내용이 없습니다.');}
+ }catch(e){hymnEditStatus('저장 실패: '+(e.message||e));}
+ finally{hymnEditLoading=false;document.getElementById('hymnEditSaveButton').disabled=!hymnEditExpected;}
+}
 function dayCard(d){
  const has=['입당','봉헌','성체','파견'].some(k=>(d.songs[k]||[]).length)||d.봉헌텍스트;
  const sunday=isMassDay(d),mode=futureMassMode[d.date]||'';
  const actions=sunday?`<div class="today-mass-actions future-mass-actions"><button class="${mode==='mass'?'active':''}" onclick="toggleFutureMass('${d.date}','mass')">${mode==='mass'?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${mode==='accomp'?'active':''}" onclick="toggleFutureMass('${d.date}','accomp')">${mode==='accomp'?'반주용 닫기':'반주용 미사곡'}</button>`:''}</div>`:'';
- return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div>${hymnEditPreview?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정 미리보기</button>`:''}</div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}</div>`;
+ return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div>${hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:''}</div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}</div>`;
 }
 
 // V3.23.27: 사용자가 현재 표시된 미사곡 번호를 본당 확정 번호로 확인함.
