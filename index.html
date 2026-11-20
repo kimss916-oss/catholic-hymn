@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.93-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.95-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -741,6 +741,9 @@ header p{color:#d6eae3 !important;}
 .past-date-open,.past-preview-close{border:1px solid #b8d6c6;background:#fff;color:#075c4e;border-radius:7px;padding:7px 10px;font-weight:750;cursor:pointer}
 .past-preview-close{margin:10px 0}
 #pastDayPreview{margin:12px 0 18px;scroll-margin-top:16px}
+/* V3.23.95: 관리/지난 성가표 버튼을 한 줄에 배치 */
+.schedule-utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 12px;flex-wrap:wrap}
+.schedule-utility-row .past-schedule-action{margin:0}
 /* V3.23.36: 지난 성가표 별도 조회 */
 .past-schedule-action{display:flex;justify-content:flex-end;margin:0 0 12px}
 .past-schedule-action button{background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer}
@@ -975,8 +978,10 @@ header p{color:#d6eae3 !important;}
     <button class="month-move" onclick="moveScheduleMonth(1)">다음월 ›</button>
   </div>
   <div id="archiveScheduleBox" style="display:none"></div>
-<div class="psalm-map-test-entry" style="margin:8px 0 12px"><button type="button" onclick="openPsalmMapAdmin()" style="min-height:38px;padding:8px 12px;border:1px solid #b7d2c3;border-radius:10px;background:#f2f8f4;color:#075c4e;font-weight:800">화답송 관리</button></div><div id="psalmMapAdminMount"></div>
+<div id="scheduleUtilityRow" class="schedule-utility-row">
+<div class="psalm-map-test-entry" style="margin:0"><button type="button" onclick="openPsalmMapAdmin()" style="background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer">화답송 관리</button></div>
 <div id="pastScheduleAction" class="past-schedule-action"><button type="button" id="pastScheduleButton" onclick="togglePastSchedule()">지난 성가표 보기</button></div>
+</div><div id="psalmMapAdminMount"></div>
 <div class="hero"><b>2026년 11월 성가표</b><p style="margin-bottom:0;color:#70798a">성가번호를 누르면 악보를 볼 수 있습니다.</p></div>
 <div id="todayHighlight"></div>
 <div class="view-filter"><button id="viewAll" class="active" onclick="setMonthView('all')">전체</button><button id="viewSunday" onclick="setMonthView('sunday')">주일</button><button id="viewFuneral" onclick="setMonthView('funeral')">장례</button><button id="viewHolyHour" onclick="setMonthView('holyhour')">성시간</button><button id="viewMass" onclick="setMonthView('mass')">미사곡</button></div>
@@ -1026,7 +1031,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.93-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.95-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1960,7 +1965,7 @@ function openFutureMassHymn(n,date,mode){
  accompMassOpen=mode==='accomp'&&accompMassAuthorized;
  openHymn(n,0,'schedule',dayHymnSequence(d,true));
 }
-/* V3.23.93-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
+/* V3.23.95-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
 let hymnEditAccess={canEdit:false,full:false,today:''};
 let hymnEditCurrentDate='',hymnEditExpected=null,hymnEditLoading=false;
 const hymnEditPending=new Map();
@@ -2242,9 +2247,12 @@ function renderArchiveMonth(){
  const pastAction=document.getElementById("pastScheduleAction");
  const pastButton=document.getElementById("pastScheduleButton");
  pastAction.style.display=isCurrent?"flex":"none";
+ document.getElementById("scheduleUtilityRow").style.display=isCurrent?"flex":"none";
  if(isCurrent)pastButton.textContent=showPastCurrentMonth?"현재 성가표로 돌아가기":"지난 성가표 보기";
  const showNormal=isCurrent&&!showPastCurrentMonth;
- const todayChildren=[...document.getElementById("todayPanel").children].filter(el=>!el.classList.contains("month-nav-card")&&el.id!=="archiveScheduleBox"&&el.id!=="pastScheduleAction");
+ const psalmEntry=document.querySelector("#scheduleUtilityRow .psalm-map-test-entry");
+ if(psalmEntry)psalmEntry.style.display=showNormal?"":"none";
+ const todayChildren=[...document.getElementById("todayPanel").children].filter(el=>!el.classList.contains("month-nav-card")&&el.id!=="archiveScheduleBox"&&el.id!=="pastScheduleAction"&&el.id!=="scheduleUtilityRow");
  todayChildren.forEach(el=>el.style.display=showNormal?"":"none");
  if(isCurrent){box.style.display=showPastCurrentMonth?"block":"none";if(showPastCurrentMonth){renderPastCurrentMonth();refreshPsalmButtons();}return;}
  box.style.display='block';
@@ -2704,7 +2712,7 @@ window.addEventListener('load',function(){
 });
 </script>
 <script>
-/* V3.23.93-TEST: 로그인 사용자별 성가 즐겨찾기 */
+/* V3.23.95-TEST: 로그인 사용자별 성가 즐겨찾기 */
 function favoriteRow(h){
  if(!h)return '';
  const n=Number(h.number),star=favoriteEnabled?`<button type="button" class="fav-star ${favoriteNumbers.has(n)?'selected':''}" aria-label="${n}번 즐겨찾기 ${favoriteNumbers.has(n)?'해제':'등록'}" onclick="toggleFavorite(${n})" ${favoriteBusy.has(n)?'disabled':''}>${favoriteNumbers.has(n)?'★':'☆'}</button>`:'';
