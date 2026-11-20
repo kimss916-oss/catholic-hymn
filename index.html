@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.92">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.93-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1026,7 +1026,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.92</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.93-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1960,7 +1960,7 @@ function openFutureMassHymn(n,date,mode){
  accompMassOpen=mode==='accomp'&&accompMassAuthorized;
  openHymn(n,0,'schedule',dayHymnSequence(d,true));
 }
-/* V3.23.92: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
+/* V3.23.93-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
 let hymnEditAccess={canEdit:false,full:false,today:''};
 let hymnEditCurrentDate='',hymnEditExpected=null,hymnEditLoading=false;
 const hymnEditPending=new Map();
@@ -2704,7 +2704,7 @@ window.addEventListener('load',function(){
 });
 </script>
 <script>
-/* V3.23.92: 로그인 사용자별 성가 즐겨찾기 */
+/* V3.23.93-TEST: 로그인 사용자별 성가 즐겨찾기 */
 function favoriteRow(h){
  if(!h)return '';
  const n=Number(h.number),star=favoriteEnabled?`<button type="button" class="fav-star ${favoriteNumbers.has(n)?'selected':''}" aria-label="${n}번 즐겨찾기 ${favoriteNumbers.has(n)?'해제':'등록'}" onclick="toggleFavorite(${n})" ${favoriteBusy.has(n)?'disabled':''}>${favoriteNumbers.has(n)?'★':'☆'}</button>`:'';
@@ -2729,15 +2729,23 @@ function setFavoriteTab(tab){
 function refreshFavoriteResults(){if(favoriteTab==='mine')renderFavoriteList();else if(activeCategory)showCategory(activeCategory);else search();}
 async function toggleFavorite(n){
  if(!favoriteEnabled||favoriteBusy.has(n))return;
- favoriteBusy.add(n);refreshFavoriteResults();
  const desired=!favoriteNumbers.has(n);
+ // 먼저 화면에 반영하고, 서버 저장은 별도로 진행합니다.
+ favoriteBusy.add(n);
+ if(desired)favoriteNumbers.add(n);else favoriteNumbers.delete(n);
+ refreshFavoriteResults();
  try{
   const response=await hymnEditRequest('HYMN_FAVORITE_SET',{number:n,enabled:desired});
   if(!response||!response.ok)throw new Error(response?.message||'저장 실패');
-  favoriteNumbers=new Set((response.numbers||[]).map(Number));
+  // 다른 곡을 저장 중이라면 오래된 서버 목록으로 덮어쓰지 않습니다.
+  if(favoriteBusy.size===1 && Array.isArray(response.numbers)){
+   favoriteNumbers=new Set(response.numbers.map(Number));
+  }
   favoriteStatus(`${n}번 성가 ${desired?'즐겨찾기 등록':'즐겨찾기 해제'} 완료`);
- }catch(e){favoriteStatus('즐겨찾기 저장 실패: '+(e.message||e));}
- finally{favoriteBusy.delete(n);refreshFavoriteResults();}
+ }catch(e){
+  if(desired)favoriteNumbers.delete(n);else favoriteNumbers.add(n);
+  favoriteStatus('즐겨찾기 저장 실패: '+(e.message||e));
+ }finally{favoriteBusy.delete(n);refreshFavoriteResults();}
 }
 let favoriteChecking=false;
 async function loadFavorites(){
