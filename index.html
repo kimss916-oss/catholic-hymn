@@ -942,7 +942,7 @@ header p{color:#d6eae3 !important;}
 </style>
 <div id="searchPanel" class="main-panel">
 <div id="favTabs" class="fav-tabs" hidden><button id="favAllTab" type="button" class="active" onclick="setFavoriteTab('all')">전체 성가</button><button id="favMineTab" type="button" onclick="setFavoriteTab('mine')">★ 내 즐겨찾기</button></div>
-<div id="favStatus" class="note" style="display:none" role="status"></div>
+<div id="favStatus" class="note" style="display:none" role="status"></div><div id="favRetry" style="display:none;margin:8px 0"><button type="button" onclick="loadFavorites()" style="padding:9px 13px;border-radius:9px;border:1px solid #9bb8a7;background:white;color:#075c4e">즐겨찾기 연결 다시 확인</button></div>
 <div class="hero">
 <div class="search"><input id="q" placeholder="성가번호 또는 제목" autocomplete="off"><button onclick="search()">검색</button></div>
 <div class="note">번호 1~528 · 성가 제목으로 검색할 수 있습니다.</div>
@@ -2739,15 +2739,23 @@ async function toggleFavorite(n){
  }catch(e){favoriteStatus('즐겨찾기 저장 실패: '+(e.message||e));}
  finally{favoriteBusy.delete(n);refreshFavoriteResults();}
 }
+let favoriteChecking=false;
 async function loadFavorites(){
- if(window.parent===window)return;
+ if(favoriteChecking)return;
+ if(window.parent===window){favoriteStatus('즐겨찾기는 통합 PWA에 로그인하여 실행할 때 이용할 수 있습니다.');return;}
+ favoriteChecking=true;
+ favoriteStatus('즐겨찾기 로그인 및 서버 연결 확인 중…');
+ document.getElementById('favRetry').style.display='none';
  try{
-  const r=await hymnEditRequest('HYMN_FAVORITE_LIST',{},20000);
-  if(!r||!r.ok||!r.authenticated)return;
+  const r=await hymnEditRequest('HYMN_FAVORITE_LIST',{},12000);
+  if(!r||!r.ok){throw new Error(r?.message||'서버가 요청을 처리하지 못했습니다.');}
+  if(!r.authenticated){favoriteEnabled=false;document.getElementById('favTabs').hidden=true;favoriteStatus('로그인 정보가 전달되지 않았습니다. 통합 PWA 로그인 상태를 확인해 주세요.');document.getElementById('favRetry').style.display='block';return;}
   favoriteEnabled=true;favoriteNumbers=new Set((r.numbers||[]).map(Number));
   document.getElementById('favTabs').hidden=false;
+  favoriteStatus('');
   refreshFavoriteResults();
- }catch(e){favoriteStatus('즐겨찾기를 불러오지 못했습니다. 앱을 다시 열어 주세요.');}
+ }catch(e){favoriteStatus('즐겨찾기 연결 오류: '+(e?.message||String(e)));document.getElementById('favRetry').style.display='block';}
+ finally{favoriteChecking=false;}
 }
 const originalFavoriteSearch=search;
 search=function(){if(favoriteTab==='mine'){renderFavoriteList();return;}return originalFavoriteSearch();};
