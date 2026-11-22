@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.96-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.97-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -935,6 +935,9 @@ header p{color:#d6eae3 !important;}
 .hymn-edit-dialog h2{font-size:21px;margin:0 0 7px}.hymn-edit-dialog p{font-size:13px;color:#64748b;margin:0 0 15px}
 .hymn-edit-field{display:block;margin:10px 0;font-weight:800;font-size:14px}.hymn-edit-field input{display:block;width:100%;margin-top:5px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:17px}
 .hymn-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}.hymn-edit-actions button{padding:11px 17px;border-radius:10px;border:1px solid #cbd5e1;background:white;font-weight:800}.hymn-edit-actions button:disabled{background:#e2e8f0;color:#94a3b8}
+/* V3.23.97: 대림·사순 주일 대영광송 생략 안내 */
+.gloria-omission-note{grid-column:1/-1;margin:-3px 0 3px;padding:0 8px;color:#718178;font-size:13px;line-height:1.45;text-align:left;white-space:nowrap;letter-spacing:-.3px}
+@media(max-width:390px){.gloria-omission-note{font-size:12px;letter-spacing:-.55px;padding:0 2px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1031,7 +1034,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.96-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.97-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1955,7 +1958,7 @@ function futureMassRows(d,mode){
    if(!e&&!['입당','봉헌','성체','파견'].includes(k))return '';
    const buttons=k==='화답송'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:numbers.map(n=>`<button class="song-link" onclick="openFutureMassHymn(${n},'${d.date}','${mode}')">${n}</button>`).join('');
    const extra=k==='봉헌'&&d.봉헌텍스트?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
-   return `<div class="mass-list-row"><strong>${k}</strong><div class="mass-list-values">${buttons}${extra||(!buttons?'<span class="mass-unavailable">-</span>':'')}</div></div>`;
+   return `<div class="mass-list-row"><strong>${k}</strong><div class="mass-list-values">${buttons}${extra||(!buttons?'<span class="mass-unavailable">-</span>':'')}</div></div>${k==='자비송'?gloriaOmissionNote(d):''}`;
  }).join('')}</div>`;
 }
 function openFutureMassHymn(n,date,mode){
@@ -1965,7 +1968,7 @@ function openFutureMassHymn(n,date,mode){
  accompMassOpen=mode==='accomp'&&accompMassAuthorized;
  openHymn(n,0,'schedule',dayHymnSequence(d,true));
 }
-/* V3.23.96-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
+/* V3.23.97-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
 let hymnEditAccess={canEdit:false,full:false,today:''};
 let hymnEditCurrentDate='',hymnEditExpected=null,hymnEditLoading=false;
 const hymnEditPending=new Map();
@@ -2064,6 +2067,12 @@ function isMassDay(d){
  const mm=date.getMonth()+1,day=date.getDate();
  return d.weekday==='주일'||(mm===12&&day===25)||(mm===8&&day===15)||/부활.*(성야|밤미사|대축일)/.test(d.liturgy||'');
 }
+function gloriaOmissionNote(d){
+ const liturgy=d.liturgy||'';
+ if(d.weekday!=='주일'||/대축일/.test(liturgy))return '';
+ const season=/대림/.test(liturgy)?'대림':/(?:사순|주님 수난 성지)/.test(liturgy)?'사순':'';
+ return season?`<div class="gloria-omission-note">${season} 시기에는 대영광송을 노래하지 않습니다.</div>`:'';
+}
 function massEntriesForDay(d){
  const liturgy=d.liturgy||'';
  const mm=monthlyData.month,day=d.day,year=monthlyData.year;
@@ -2136,7 +2145,7 @@ function todayIntegratedSongBoxes(d){
   const buttons=numbers.map(n=>`<button class="song-link" onclick="openTodayMassHymn(${n})">${n}</button>`).join('');
   const extra=(!mass&&k==='봉헌'&&d.봉헌텍스트)?`<span class="song-text">${d.봉헌텍스트}</span>`:'';
   const pending=k==='화답송'?`<span data-psalm-date="${d.date}">${psalmButton(d)}</span>`:'';
-  return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b class="${mass && k.length>=10?'long-mass-name':''}">${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>`;
+  return `<div class="song-box ${mass?'today-mass-row':'today-regular-row'}"><b class="${mass && k.length>=10?'long-mass-name':''}">${k}</b>${buttons||extra||pending?`<div class="song-buttons">${buttons}${extra}${pending}</div>`:'<span class="empty-song">-</span>'}</div>${massOn&&k==='자비송'?gloriaOmissionNote(d):''}`;
  }).join('');
 }
 function todayMarkup(d,preview=false){
@@ -2711,7 +2720,7 @@ window.addEventListener('load',function(){
 });
 </script>
 <script>
-/* V3.23.96-TEST: 로그인 사용자별 성가 즐겨찾기 */
+/* V3.23.97-TEST: 로그인 사용자별 성가 즐겨찾기 */
 function favoriteRow(h){
  if(!h)return '';
  const n=Number(h.number),star=favoriteEnabled?`<button type="button" class="fav-star ${favoriteNumbers.has(n)?'selected':''}" aria-label="${n}번 즐겨찾기 ${favoriteNumbers.has(n)?'해제':'등록'}" onclick="toggleFavorite(${n})" ${favoriteBusy.has(n)?'disabled':''}>${favoriteNumbers.has(n)?'★':'☆'}</button>`:'';
