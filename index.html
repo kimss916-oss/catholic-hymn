@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.95-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.96-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1031,7 +1031,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.95-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.96-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1965,7 +1965,7 @@ function openFutureMassHymn(n,date,mode){
  accompMassOpen=mode==='accomp'&&accompMassAuthorized;
  openHymn(n,0,'schedule',dayHymnSequence(d,true));
 }
-/* V3.23.95-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
+/* V3.23.96-TEST: 통합 PWA 세션으로 서버 권한 확인. 공개 GitHub 파일에 토큰 보관 금지. */
 let hymnEditAccess={canEdit:false,full:false,today:''};
 let hymnEditCurrentDate='',hymnEditExpected=null,hymnEditLoading=false;
 const hymnEditPending=new Map();
@@ -2046,7 +2046,7 @@ function dayCard(d){
 const MASS_MASTER_META={version:'V3.23.27',status:'CONFIRMED',confirmed:true,source:'본당 사용자 확인',updatedAt:'2026-11-06'};
 const PSALM_MASTER={scoreId:null,pageNo:null,assetPath:null,confirmed:false};
 function massMasterNotice(){
- return '본당 확정 미사곡 · 성가번호를 누르면 악보를 볼 수 있습니다. (화답송 악보 연결 예정)';
+ return '본당 확정 미사곡 · 성가번호를 누르면 악보를 볼 수 있습니다.';
 }
 // V3.23.27: 본당 확정 미사곡 마스터. 현재 번호 유지.
 // 화답송은 향후 PSALM_MASTER의 악보 식별번호/페이지 번호와 연결한다.
@@ -2067,11 +2067,10 @@ function isMassDay(d){
 function massEntriesForDay(d){
  const liturgy=d.liturgy||'';
  const mm=monthlyData.month,day=d.day,year=monthlyData.year;
- // 2026년 대림/사순 주일 기준. 대축일에는 대영광송을 생략하지 않음.
- const isAdvent=year===2026&&mm===11&&day>=29||year===2026&&mm===12&&day<=24;
- const isLent=year===2026&&((mm===2&&day>=18)||(mm===3)||(mm===4&&day<=4));
+ // 대림·사순 주일에는 대영광송을 생략한다. 대축일은 예외.
+ const isPenitentialSunday=d.weekday==='주일' && /(?:대림|사순|주님 수난 성지)/.test(liturgy);
  const solemnity=/대축일/.test(liturgy);
- return MASS_HYMN_MASTER.filter(e=>e.key!=='대영광송'||!((isAdvent||isLent)&&!solemnity));
+ return MASS_HYMN_MASTER.filter(e=>e.key!=='대영광송'||!(isPenitentialSunday&&!solemnity));
 }
 function dayHymnSequence(d,withMass){
  const base=(key)=>((d.songs&&d.songs[key])||[]).filter(n=>hymns[n]);
@@ -2166,13 +2165,13 @@ function renderSpecialSongs(type){
 function renderMassSongList(){
  const list=document.getElementById('monthList');if(!list)return;
  // 교중 미사 미사곡은 월별 주일 수와 무관하게 단일 고정 목록만 표시한다.
- const order=['자비송','대영광송','화답송','복음환호송','보편지향기도','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양'];
+ const order=['자비송','대영광송','복음환호송','보편지향기도','거룩하시도다','신앙의 신비여','아멘','주님의 기도','주님께 나라와 권능과','하느님의 어린양'];
  const entries=Object.fromEntries(MASS_HYMN_MASTER.map(e=>[e.key,e]));
  const seq=order.flatMap(key=>(entries[key]?.numbers||[]).filter(n=>hymns[n]));
  const rows=order.filter(key=>entries[key]).map(key=>{
   const item=entries[key],numbers=item.numbers||[];
   const buttons=numbers.filter(n=>hymns[n]).map(n=>`<button class="song-link" onclick="openHymn(${n},0,'schedule',${JSON.stringify(seq)})">${n}</button>`).join('');
-  const note=key==='화답송'?'화답송 악보 · 페이지 연결 예정':(!buttons?'지정곡 없음':'');
+  const note=!buttons?'지정곡 없음':'';
   return `<div class="mass-list-row"><strong>${key}</strong><div class="mass-list-values">${buttons}${note?`<span class="mass-list-note">${note}</span>`:''}</div></div>`;
  }).join('');
  list.innerHTML='<p class="mass-info">'+massMasterNotice()+'</p>'+`<section class="mass-list-card"><div class="mass-list-title"><strong>교중 미사 미사곡</strong><small>미사곡 전용 목록 · 성가번호를 누르면 악보 열기</small></div>${rows}</section>`;
@@ -2712,7 +2711,7 @@ window.addEventListener('load',function(){
 });
 </script>
 <script>
-/* V3.23.95-TEST: 로그인 사용자별 성가 즐겨찾기 */
+/* V3.23.96-TEST: 로그인 사용자별 성가 즐겨찾기 */
 function favoriteRow(h){
  if(!h)return '';
  const n=Number(h.number),star=favoriteEnabled?`<button type="button" class="fav-star ${favoriteNumbers.has(n)?'selected':''}" aria-label="${n}번 즐겨찾기 ${favoriteNumbers.has(n)?'해제':'등록'}" onclick="toggleFavorite(${n})" ${favoriteBusy.has(n)?'disabled':''}>${favoriteNumbers.has(n)?'★':'☆'}</button>`:'';
