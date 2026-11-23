@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.97-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.98-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -938,6 +938,30 @@ header p{color:#d6eae3 !important;}
 /* V3.23.97: 대림·사순 주일 대영광송 생략 안내 */
 .gloria-omission-note{grid-column:1/-1;margin:-3px 0 3px;padding:0 8px;color:#718178;font-size:13px;line-height:1.45;text-align:left;white-space:nowrap;letter-spacing:-.3px}
 @media(max-width:390px){.gloria-omission-note{font-size:12px;letter-spacing:-.55px;padding:0 2px}}
+/* V3.23.98-TEST: 태블릿/넓은 화면 악보 뷰어 여백만 분리 조정.
+   스마트폰(699px 이하)은 기존 97%와 여백 유지. 원본 악보 이미지는 변경하지 않음. */
+@media (min-width:700px) {
+  /* 기본 보기: 메뉴 영역은 기존대로 확보, 악보 주변 여백만 3px */
+  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage {
+    padding:3px !important;
+  }
+  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage img {
+    max-width:100% !important;
+    max-height:100% !important;
+  }
+  /* 전체화면: CSS 모드와 브라우저 Fullscreen API 양쪽에 적용 */
+  .viewer.open.fullscreen-mode .page-stage,
+  .viewer.open:fullscreen .page-stage,
+  .viewer.open:-webkit-full-screen .page-stage {
+    padding:0 !important;
+  }
+  .viewer.open.fullscreen-mode .page-stage img,
+  .viewer.open:fullscreen .page-stage img,
+  .viewer.open:-webkit-full-screen .page-stage img {
+    max-width:100% !important;
+    max-height:100% !important;
+  }
+}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
