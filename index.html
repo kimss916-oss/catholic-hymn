@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.98-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.99-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -938,7 +938,7 @@ header p{color:#d6eae3 !important;}
 /* V3.23.97: 대림·사순 주일 대영광송 생략 안내 */
 .gloria-omission-note{grid-column:1/-1;margin:-3px 0 3px;padding:0 8px;color:#718178;font-size:13px;line-height:1.45;text-align:left;white-space:nowrap;letter-spacing:-.3px}
 @media(max-width:390px){.gloria-omission-note{font-size:12px;letter-spacing:-.55px;padding:0 2px}}
-/* V3.23.98-TEST: 태블릿/넓은 화면 악보 뷰어 여백만 분리 조정.
+/* V3.23.99-TEST: 태블릿/넓은 화면 악보 뷰어 여백만 분리 조정.
    스마트폰(699px 이하)은 기존 97%와 여백 유지. 원본 악보 이미지는 변경하지 않음. */
 @media (min-width:700px) {
   /* 기본 보기: 메뉴 영역은 기존대로 확보, 악보 주변 여백만 3px */
@@ -960,6 +960,48 @@ header p{color:#d6eae3 !important;}
   .viewer.open:-webkit-full-screen .page-stage img {
     max-width:100% !important;
     max-height:100% !important;
+  }
+}
+
+/* V3.23.99-TEST: 태블릿 악보 표시 영역 확대. 이미지 비율 유지, 스마트폰 불변.
+   기본 보기: 상단 조작부만 확보하고 하단 이전/다음 버튼은 터치 시 표시.
+   전체화면: 뷰어 내부 하단 버튼을 숨기고 악보가 전체 영역을 사용.
+   참고: 상위 PWA의 메인홈/매일미사/기도문 하단 탭은 이 HTML에서 제어할 수 없음. */
+@media (min-width:700px) {
+  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage {
+    top:54px !important;
+    bottom:0 !important;
+    padding:0 !important;
+  }
+  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .page-stage img,
+  .viewer.open.fullscreen-mode .page-stage img,
+  .viewer.open:fullscreen .page-stage img,
+  .viewer.open:-webkit-full-screen .page-stage img {
+    width:auto !important;
+    height:auto !important;
+    max-width:100% !important;
+    max-height:100% !important;
+    object-fit:contain !important;
+  }
+  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .nav {
+    transform:translateY(120%) !important;
+    pointer-events:none;
+  }
+  .viewer.open:not(.fullscreen-mode).controls-show .nav {
+    transform:translateY(0) !important;
+    pointer-events:auto;
+  }
+  .viewer.open.fullscreen-mode .nav,
+  .viewer.open:fullscreen .nav,
+  .viewer.open:-webkit-full-screen .nav {
+    display:none !important;
+  }
+  .viewer.open.fullscreen-mode .page-stage,
+  .viewer.open:fullscreen .page-stage,
+  .viewer.open:-webkit-full-screen .page-stage {
+    top:0 !important;
+    bottom:0 !important;
+    padding:0 !important;
   }
 }
 </style></head><body><div class="app">
@@ -1058,7 +1100,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.97-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.99-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
