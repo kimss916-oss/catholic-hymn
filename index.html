@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.100-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.101-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -938,7 +938,7 @@ header p{color:#d6eae3 !important;}
 /* V3.23.97: 대림·사순 주일 대영광송 생략 안내 */
 .gloria-omission-note{grid-column:1/-1;margin:-3px 0 3px;padding:0 8px;color:#718178;font-size:13px;line-height:1.45;text-align:left;white-space:nowrap;letter-spacing:-.3px}
 @media(max-width:390px){.gloria-omission-note{font-size:12px;letter-spacing:-.55px;padding:0 2px}}
-/* V3.23.100-TEST: 태블릿/넓은 화면 악보 뷰어 여백만 분리 조정.
+/* V3.23.101-TEST: 태블릿/넓은 화면 악보 뷰어 여백만 분리 조정.
    스마트폰(699px 이하)은 기존 97%와 여백 유지. 원본 악보 이미지는 변경하지 않음. */
 @media (min-width:700px) {
   /* 기본 보기: 메뉴 영역은 기존대로 확보, 악보 주변 여백만 3px */
@@ -963,7 +963,7 @@ header p{color:#d6eae3 !important;}
   }
 }
 
-/* V3.23.100-TEST: 태블릿 악보 표시 영역 확대. 이미지 비율 유지, 스마트폰 불변.
+/* V3.23.101-TEST: 태블릿 악보 표시 영역 확대. 이미지 비율 유지, 스마트폰 불변.
    기본 보기: 상단 조작부만 확보하고 하단 이전/다음 버튼은 터치 시 표시.
    전체화면: 뷰어 내부 하단 버튼을 숨기고 악보가 전체 영역을 사용.
    참고: 상위 PWA의 메인홈/매일미사/기도문 하단 탭은 이 HTML에서 제어할 수 없음. */
@@ -984,7 +984,7 @@ header p{color:#d6eae3 !important;}
     object-fit:contain !important;
   }
   /* 기본 보기에서는 하단 이전/다음 버튼을 항상 표시 */
-  .viewer.open:not(.fullscreen-mode):not(:fullscreen) .nav {
+  .viewer.open:not(.schedule-mode):not(.fullscreen-mode):not(:fullscreen) .nav {
     display:grid !important;
     transform:translateY(0) !important;
     pointer-events:auto !important;
@@ -1001,6 +1001,11 @@ header p{color:#d6eae3 !important;}
     bottom:0 !important;
     padding:0 !important;
   }
+}
+/* V3.23.101: 일정 악보는 기존 하단 성가 이동 버튼 숨김 유지 */
+@media(min-width:700px){
+.viewer.open.schedule-mode:not(.fullscreen-mode):not(:fullscreen) .page-stage{bottom:0!important;}
+.viewer.open.schedule-mode .nav{display:none!important;}
 }
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
@@ -1098,7 +1103,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.100-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.101-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -2616,10 +2621,21 @@ function pungMuNotifyFullscreen(){
     showControls(false);
   }
   syncFullscreenButton();
-  try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen:!!document.fullscreenElement},'*')}catch(e){}
+  try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen:!!(viewer.classList.contains('open') && (viewer.classList.contains('fullscreen-mode') || document.fullscreenElement || document.webkitFullscreenElement))},'*')}catch(e){}
 }
 document.addEventListener('fullscreenchange',pungMuNotifyFullscreen);
 document.addEventListener('webkitfullscreenchange',pungMuNotifyFullscreen);
+// Notify the existing parent bridge on CSS fullscreen entry/exit and viewer close.
+let lastParentScoreMode=null;
+function syncParentScoreMode(){
+ const fullscreen=!!(viewer.classList.contains('open')&&(viewer.classList.contains('fullscreen-mode')||document.fullscreenElement||document.webkitFullscreenElement));
+ if(lastParentScoreMode===fullscreen)return;
+ lastParentScoreMode=fullscreen;
+ try{window.parent.postMessage({type:'PUNG_MU_SCORE_MODE',fullscreen},'*')}catch(e){}
+}
+new MutationObserver(syncParentScoreMode).observe(viewer,{attributes:true,attributeFilter:['class']});
+window.addEventListener('pageshow',()=>{lastParentScoreMode=null;syncParentScoreMode();});
+window.addEventListener('load',()=>{lastParentScoreMode=null;syncParentScoreMode();});
 window.addEventListener('message',function(event){
   if(event.origin!=='https://script.google.com' &&
      !event.origin.endsWith('.googleusercontent.com') &&
