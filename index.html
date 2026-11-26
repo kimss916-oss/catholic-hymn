@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.101">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.103-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1051,7 +1051,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="archiveScheduleBox" style="display:none"></div>
 <div id="scheduleUtilityRow" class="schedule-utility-row">
-<div class="psalm-map-test-entry" style="margin:0"><button type="button" onclick="openPsalmMapAdmin()" style="background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer">화답송 관리</button></div>
+<div class="psalm-map-test-entry" style="margin:0;display:none"><button type="button" onclick="openPsalmMapAdmin()" style="background:#fff;color:#075c4e;border:1px solid #b8d3c7;border-radius:11px;padding:11px 16px;font-size:15px;font-weight:850;cursor:pointer">화답송 관리</button></div>
 <div id="pastScheduleAction" class="past-schedule-action"><button type="button" id="pastScheduleButton" onclick="togglePastSchedule()">지난 성가표 보기</button></div>
 </div><div id="psalmMapAdminMount"></div>
 <div class="hero"><b>2026년 11월 성가표</b><p style="margin-bottom:0;color:#70798a">성가번호를 누르면 악보를 볼 수 있습니다.</p></div>
@@ -1103,7 +1103,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.101</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.103-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1539,7 +1539,7 @@ async function psalmLoadLibrary(){
   psalmLibraryFiles=all.sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   if(status)status.textContent='등록된 WebP 악보 '+all.length+'개 · 목록에서 선택할 날짜를 먼저 지정하세요.';
   psalmRenderLibrary();
- }catch(e){if(status)status.textContent='목록 조회 실패: '+e.message;}
+ }catch(e){if(status)status.textContent='목록 조회 실패. 다시 시도해 주세요.';}
 }
 function psalmPickLibraryForDate(date){
  psalmLibraryChosenDate=date;
@@ -1581,7 +1581,15 @@ function psalmShowAdminTab(tab){if(tab)psalmAdminTab=tab;
  if(a)a.setAttribute('aria-selected',String(initial));if(b)b.setAttribute('aria-selected',String(!initial));
  renderPsalmMapRows();
 }
+let psalmManageAuthorized=false;
+function applyPsalmManagePermission(allowed){
+ psalmManageAuthorized=allowed===true;
+ const entry=document.querySelector("#scheduleUtilityRow .psalm-map-test-entry");
+ if(entry)entry.style.display=psalmManageAuthorized&&!showPastCurrentMonth?"":"none";
+ if(!psalmManageAuthorized)closePsalmMapAdmin();
+}
 function openPsalmMapAdmin(){
+ if(!psalmManageAuthorized)return;
  psalmRefreshCandidates();
  const mount=document.getElementById('psalmMapAdminMount');if(!mount)return;
  mount.innerHTML=`<div class="psalm-map-admin"><h3>화답송 관리 · ${monthlyData.year}년 ${monthlyData.month}월</h3><p id="psalmRemoteNotice" aria-live="polite"></p>
@@ -1594,12 +1602,13 @@ function openPsalmMapAdmin(){
  renderPsalmMapRows();psalmRemoteNotice();psalmConvertMount();psalmLoadLibrary();psalmShowAdminTab(psalmAdminTab);
 }
 function psalmLiturgicalCycle(date){
- // The liturgical year changes at Advent I, not on January 1.
+ // Advent I is the Sunday on or after November 27 (UTC civil-date arithmetic).
  const y=Number(date.slice(0,4)),month=Number(date.slice(5,7)),day=Number(date.slice(8,10));
- const christmas=new Date(y,11,25),weekday=christmas.getDay();
- const advent1=new Date(y,11,25-((weekday+28)%7)-21); // four Sundays before Christmas
- const litYear=new Date(y,month-1,day)>=advent1?y+1:y;
- return ['year-a','year-b','year-c'][(litYear-2027+300)%3];
+ const nov27=new Date(Date.UTC(y,10,27));
+ const advent1=Date.UTC(y,10,27+(7-nov27.getUTCDay())%7);
+ const litYear=Date.UTC(y,month-1,day)>=advent1?y+1:y;
+ // Liturgical year 2026 = A; 2027 = B; 2028 = C.
+ return ['year-a','year-b','year-c'][((litYear-2026)%3+3)%3];
 }
 function psalmDefaultUpload(date){
  const d=monthlyData.days.find(x=>x.date===date);
@@ -1627,7 +1636,7 @@ async function psalmCheckExistingPreview(){
   img.src='https://kimss916-oss.github.io/catholic-hymn/'+path.split('/').map(encodeURIComponent).join('/')+'?preview='+encodeURIComponent(result.sha||'');
   host.append(img);
   const note=document.createElement('p');note.className='note';note.textContent='기존 파일을 유지하려면 업로드하지 않고 「목록에서 선택」으로 날짜에 연결하세요. 수정된 악보라면 업로드 시 교체 확인을 거칩니다.';host.append(note);
- }catch(e){status.textContent='기존 파일 확인 실패: '+(e.message||e);}
+ }catch(e){status.textContent='기존 파일 확인 실패. 다시 시도해 주세요.';}
 }
 let psalmDedicatedDate='';
 function psalmCloseDedicated(){
@@ -1666,6 +1675,7 @@ function psalmRegisterFromMass(date){
 }
 let psalmGhDeletePending=new Map();
 async function psalmDeleteGithubCurrent(){
+ if(!psalmManageAuthorized)return;
  const date=psalmDedicatedDate;
  const status=document.getElementById('psalmGithubDeleteStatus');
  if(!date||!status)return;
@@ -1686,7 +1696,7 @@ async function psalmDeleteGithubCurrent(){
   if(!result.ok)throw Error(result.message||'삭제 실패');
   status.textContent='GitHub 파일 삭제 완료. GitHub 커밋 이력에서 복구할 수 있습니다. 화면을 새로고침하여 상태를 확인해 주세요.';
   await psalmLoadLibrary();
- }catch(err){status.textContent='삭제하지 못했습니다: '+(err?.message||String(err));}
+ }catch(err){status.textContent='삭제하지 못했습니다. 다시 시도해 주세요.';}
 }
 function psalmOpenUpload(date){
  psalmLibraryChosenDate=date;
@@ -1756,11 +1766,12 @@ function psalmCheckFile(path){
  });
 }
 async function psalmManualConnect(date){
+ if(!psalmManageAuthorized)return;
  const input=document.getElementById('psalmPath_'+date);
  const path=psalmSafePath(input?.value);
  if(!path){alert('올바른 화답송 WebP 경로를 입력해주세요.');return;}
  const ok=await psalmCheckFile(path);
- if(!ok){alert('GitHub 악보 파일을 확인할 수 없습니다. 저장하지 않았습니다.');return;}
+ if(!ok){alert('악보 파일을 확인할 수 없습니다. 저장하지 않았습니다.');return;}
  if(window.parent===window){alert('공통 저장은 풍무동성당 통합 PWA에서 로그인한 뒤 이용해주세요.');return;}
  const item=PSALM_MAP_CANDIDATES.find(x=>x.date===date)||psalmStatusDates().find(x=>x.date===date);
  if(!item){alert('이달 성가표 또는 기존 매핑에 없는 날짜입니다.');return;}
@@ -1784,7 +1795,7 @@ async function psalmManualConnect(date){
   if(!m||m.channel!=='PUNGMU_ACCOMP_V1'||m.type!=='PSALM_SAVE_RESULT')return;
   const pending=window.psalmPendingSave?.[m.requestId];if(!pending)return;
   delete window.psalmPendingSave[m.requestId];
-  if(!m.ok){psalmMapResults[pending.date]='저장 실패';renderPsalmMapRows();alert(m.message||'저장에 실패했습니다.');return;}
+  if(!m.ok){psalmMapResults[pending.date]='저장 실패';renderPsalmMapRows();alert('저장에 실패했습니다.');return;}
   const parts=pending.path.split('/');
   PSALM_ASSETS[pending.date]=[parts[1],parts[2]];
   psalmRemoteMappings[pending.date]=pending.path;psalmRemoteDates.add(pending.date);
@@ -1796,8 +1807,9 @@ async function psalmManualConnect(date){
 })();
 let psalmPendingDelete={};
 function psalmUnmapDate(date){
- if(!psalmRemoteDates.has(date)){alert('Google Sheets에 저장된 매핑이 없습니다.');return;}
- if(!confirm(date+' 화답송 매핑을 해제하시겠습니까?\\nGoogle Sheets 연결만 삭제하며 GitHub 악보 파일은 그대로 유지합니다.'))return;
+ if(!psalmManageAuthorized)return;
+ if(!psalmRemoteDates.has(date)){alert('등록된 화답송 연결이 없습니다.');return;}
+ if(!confirm(date+' 화답송 매핑을 해제하시겠습니까?\\n연결만 해제하며 악보 파일은 그대로 유지합니다.'))return;
  if(window.parent===window){alert('통합 PWA에서 로그인 후 이용해주세요.');return;}
  const requestId='psalm-delete-'+Date.now()+'-'+Math.random().toString(36).slice(2);
  psalmPendingDelete[requestId]=date;
@@ -1813,7 +1825,7 @@ window.addEventListener('message',function(event){
  if(!m||m.channel!=='PUNGMU_ACCOMP_V1'||m.type!=='PSALM_DELETE_RESULT')return;
  const date=psalmPendingDelete[m.requestId];if(!date)return;
  delete psalmPendingDelete[m.requestId];
- if(!m.ok){psalmMapResults[date]='해제 실패';alert(m.message||'매핑 해제에 실패했습니다.');renderPsalmMapRows();return;}
+ if(!m.ok){psalmMapResults[date]='해제 실패';alert('매핑 해제에 실패했습니다.');renderPsalmMapRows();return;}
  delete psalmRemoteMappings[date];psalmRemoteDates.delete(date);
  // 원격 매핑이 해제되면 로컬 캐시도 삭제하여 재등장하지 않게 합니다.
  delete psalmMapSaved[date];
@@ -1824,7 +1836,7 @@ window.addEventListener('message',function(event){
  psalmMapResults[date]='매핑 해제 완료';
  psalmEditingDate='';
  renderPsalmMapRows();refreshPsalmButtons();verifyPsalmAssets();
- alert(date+' 매핑을 해제했습니다. GitHub 악보는 보존됩니다.');
+ alert(date+' 매핑을 해제했습니다. 악보 파일은 그대로 유지됩니다.');
 });
 function psalmManualReset(date){
  if(psalmRemoteDates.has(date)){alert('공통 매핑은 Google Sheets에서 관리됩니다.');return;}
@@ -1849,7 +1861,7 @@ async function runPsalmMapTest(){
  }
  renderPsalmMapRows();refreshPsalmButtons();
  const out=document.getElementById('psalmMapSummary');
- if(out)out.textContent=`선택 ${selected.length}건 / 제외 ${PSALM_MAP_CANDIDATES.length-selected.length}건\n${Object.entries(psalmMapResults).map(([date,status])=>date.slice(5)+' : '+status).join('\n')}\n※ 원본 성가표·미사곡 번호·서버 데이터는 변경하지 않았습니다.`;
+ if(out)out.textContent=`선택 ${selected.length}건 / 제외 ${PSALM_MAP_CANDIDATES.length-selected.length}건\n${Object.entries(psalmMapResults).map(([date,status])=>date.slice(5)+' : '+status).join('\n')}\n`;
 }
 
 
@@ -1908,7 +1920,7 @@ async function psalmConvertRun(){
    canvas.width=canvas.height=1;
   }
   status.textContent=`${count}페이지 변환 완료. 각 페이지의 다운로드 버튼으로 파일을 저장하세요.\n※ GitHub 업로드는 각 페이지의 업로드 버튼을 눌러야 실행됩니다. Google Sheets 자동 매핑은 아직 연결하지 않았습니다.`;
- }catch(err){status.textContent='변환 실패: '+(err?.message||String(err));}
+ }catch(err){status.textContent='변환 실패. 다시 시도해 주세요.';}
  finally{button.disabled=false;}
 }
 
@@ -1935,6 +1947,7 @@ function psalmGhBlobBase64(blob){return new Promise((resolve,reject)=>{
  const reader=new FileReader();reader.onload=()=>{const v=String(reader.result||'');const comma=v.indexOf(',');if(comma<0)reject(new Error('파일 인코딩 실패'));else resolve(v.slice(comma+1));};reader.onerror=()=>reject(new Error('파일 읽기 실패'));reader.readAsDataURL(blob);
 });}
 async function psalmGhUploadOne(item){
+ if(!psalmManageAuthorized)return;
  const btn=item.button;btn.disabled=true;
  try{
   if(!psalmUploadItems.includes(item))throw new Error('설정이 변경되었습니다. WebP 변환 및 미리보기를 다시 실행해 주세요.');
@@ -1943,7 +1956,7 @@ async function psalmGhUploadOne(item){
   const chosenName=psalmConvertFilename(document.getElementById('psalmConvertName')?.value||document.getElementById('psalmConvertFile')?.files?.[0]?.name?.replace(/\.[^.]+$/,''));
   const expectedName=chosenName+(item.filename.match(/_(\d+)\.webp$/)?.[0]||'.webp');
   if(chosenFolder!==item.folder || item.filename!==expectedName)throw new Error('파일명 또는 분류가 변경되었습니다. WebP 변환 및 미리보기를 다시 실행해 주세요.');
-  if(!confirm('GitHub 최종 저장 경로를 확인해 주세요.\n\n'+item.path+'\n\n이 경로로 업로드하시겠습니까?')){item.status.textContent='업로드를 취소했습니다.';return;}
+  if(!confirm('악보 저장 위치를 확인해 주세요.\n\n'+item.path+'\n\n이 경로로 업로드하시겠습니까?')){item.status.textContent='업로드를 취소했습니다.';return;}
 
   if(item.blob.size>4*1024*1024)throw new Error('WebP 파일이 4MB를 초과합니다. 화질을 낮춰 다시 변환해 주세요.');
   item.status.textContent='GitHub 기존 파일 확인 중…';
@@ -1952,7 +1965,7 @@ async function psalmGhUploadOne(item){
   let replace=false,expectedSha='';
   if(check.exists){
    if(!check.sha)throw new Error('기존 파일 버전을 확인할 수 없습니다.');
-   if(!confirm('같은 이름의 악보가 이미 있습니다.\n\n'+item.path+'\n\n기존 악보를 새 파일로 교체하시겠습니까?\nGitHub 커밋 이력에는 이전 버전이 남습니다.')){item.status.textContent='교체를 취소했습니다. 기존 파일은 유지됩니다.';return;}
+   if(!confirm('같은 이름의 악보가 이미 있습니다.\n\n'+item.path+'\n\n기존 악보를 새 파일로 교체하시겠습니까?\n')){item.status.textContent='교체를 취소했습니다. 기존 파일은 유지됩니다.';return;}
    replace=true;expectedSha=check.sha;
   }
   item.status.textContent='GitHub '+(replace?'파일 교체':'신규 업로드')+' 요청 중…';
@@ -1965,7 +1978,7 @@ async function psalmGhUploadOne(item){
   if(r.filePath!==item.path || !r.commitSha)throw new Error('GitHub 응답에 저장 경로 또는 커밋 ID가 없습니다. 저장소에서 확인해 주세요.');
   item.status.textContent='GitHub '+(r.replaced?'교체':'업로드')+' 성공.\n실제 경로: '+r.filePath+'\n커밋 ID: '+r.commitSha+'\nGoogle Sheets 매핑은 아직 변경되지 않았습니다.';
   btn.textContent='GitHub 재업로드';
- }catch(e){item.status.textContent='업로드 실패: '+(e?.message||String(e));}
+ }catch(e){item.status.textContent='업로드 실패. 다시 시도해 주세요.';}
  finally{btn.disabled=false;}
 }
 function psalmAsset(d){return PSALM_ASSETS[d.date]||null;}
@@ -2085,7 +2098,7 @@ async function openHymnEdit(date){
   for(const [id,key] of [['hymnEditEntrance','ENTRANCE'],['hymnEditOffertory','OFFERTORY'],['hymnEditCommunion','COMMUNION'],['hymnEditRecessional','RECESSIONAL']])document.getElementById(id).value=d[key]||'';
   document.getElementById('hymnEditInfo').textContent=d.LITURGY||'';
   document.getElementById('hymnEditSaveButton').disabled=false;
- }catch(e){hymnEditStatus('조회 실패: '+(e.message||e));}
+ }catch(e){hymnEditStatus('조회 실패. 다시 시도해 주세요.');}
  finally{hymnEditLoading=false;}
 }
 function closeHymnEdit(){document.getElementById('hymnEditModal').hidden=true;hymnEditCurrentDate='';hymnEditExpected=null;}
@@ -2103,7 +2116,7 @@ async function saveHymnEdit(){
   hymnScheduleLoaded.delete(monthlyData.year+'-'+monthlyData.month);
   await loadHymnScheduleMonth(monthlyData.year,monthlyData.month);
   if(hymnEditCurrentDate===date){closeHymnEdit();alert(r.changed?'성가표가 저장되었습니다.':'변경된 내용이 없습니다.');}
- }catch(e){hymnEditStatus('저장 실패: '+(e.message||e));}
+ }catch(e){hymnEditStatus('저장 실패. 다시 시도해 주세요.');}
  finally{hymnEditLoading=false;document.getElementById('hymnEditSaveButton').disabled=!hymnEditExpected;}
 }
 function dayCard(d){
@@ -2328,7 +2341,7 @@ function renderArchiveMonth(){
  if(isCurrent)pastButton.textContent=showPastCurrentMonth?"현재 성가표로 돌아가기":"지난 성가표 보기";
  const showNormal=isCurrent&&!showPastCurrentMonth;
  const psalmEntry=document.querySelector("#scheduleUtilityRow .psalm-map-test-entry");
- if(psalmEntry)psalmEntry.style.display=showNormal?"":"none";
+ if(psalmEntry)psalmEntry.style.display=showNormal&&psalmManageAuthorized?"":"none";
  const todayChildren=[...document.getElementById("todayPanel").children].filter(el=>!el.classList.contains("month-nav-card")&&el.id!=="archiveScheduleBox"&&el.id!=="pastScheduleAction"&&el.id!=="scheduleUtilityRow");
  todayChildren.forEach(el=>el.style.display=showNormal?"":"none");
  if(isCurrent){box.style.display=showPastCurrentMonth?"block":"none";if(showPastCurrentMonth){renderPastCurrentMonth();refreshPsalmButtons();}return;}
@@ -2646,6 +2659,12 @@ window.addEventListener('message',function(event){
 
 /* V3.23.82: 검색 전용 읽기 기능. 목록은 manifest.json 우선, 기존 날짜 매핑은 폴백. */
 let psalmSearchYear='전체';
+let psalmSearchDefaultCycle='';
+function updatePsalmSearchDefault(){
+ const date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const cycle=PSALM_SEARCH_FOLDERS[psalmLiturgicalCycle(date)];
+ if(cycle!==psalmSearchDefaultCycle){psalmSearchDefaultCycle=cycle;psalmSearchYear=cycle;}
+}
 let psalmSearchSeason='전체';
 let psalmSearchManifest=[];
 let psalmSearchLoaded=false;
@@ -2687,9 +2706,9 @@ function renderPsalmSearch(){
  const q=(document.getElementById('psalmQuery')?.value||'').replace(/\s+/g,'').toLowerCase();
  const entries=psalmSearchEntries().filter(e=>(psalmSearchYear==='전체'||e.year===psalmSearchYear)&&(psalmSearchSeason==='전체'||psalmSearchSeasonOf(e.title)===psalmSearchSeason)&&(!q||(e.title+e.year).replace(/\s+/g,'').toLowerCase().includes(q)));
  const info=document.getElementById('psalmSearchInfo');
- if(info)info.textContent=`검색 결과 ${entries.length}건 · ${psalmSearchLoaded?'GitHub 악보 '+psalmSearchManifest.length+'건 조회 완료 · 날짜 매핑 포함':psalmSearchLoading?'GitHub 전체 목록 불러오는 중':psalmSearchError?'전체 목록 조회 실패 · 기존 매핑만 표시':'날짜별 등록 매핑 기준'}`;
+ if(info)info.textContent=`검색 결과 ${entries.length}건 · ${psalmSearchLoaded?'악보 목록 조회 완료':psalmSearchLoading?'악보 목록 불러오는 중':psalmSearchError?'전체 목록 조회 실패 · 기존 매핑만 표시':'등록된 악보 기준'}`;
  out.innerHTML=entries.map(e=>`<button type="button" class="item" data-psalm-folder="${psalmSearchEscape(e.folder)}" data-psalm-file="${psalmSearchEscape(e.file)}"><span class="psalm-result-year">${e.year}</span><span><span class="title">${psalmSearchEscape(e.title)}</span><span class="sub">악보 바로보기</span></span></button>`).join('')||'<div class="note">선택한 분류에 해당하는 악보가 없습니다. 다른 전례주기나 시기를 선택해 주세요.</div>';
- if(psalmSearchError)out.insertAdjacentHTML('afterbegin',`<div class="note">전체 악보 목록 조회에 실패했습니다. 네트워크를 확인한 뒤 <button type="button" onclick="loadPsalmSearchManifest()">다시 불러오기</button><br><small>${psalmSearchEscape(psalmSearchError)}</small></div>`);
+ if(psalmSearchError)out.insertAdjacentHTML('afterbegin',`<div class="note">전체 악보 목록 조회에 실패했습니다. 네트워크를 확인한 뒤 <button type="button" onclick="loadPsalmSearchManifest()">다시 불러오기</button></div>`);
  out.querySelectorAll('[data-psalm-folder]').forEach(b=>b.addEventListener('click',()=>openPsalmSearchScore(b.dataset.psalmFolder,b.dataset.psalmFile)));
 }
 function openPsalmSearchScore(folder,file){
@@ -2702,6 +2721,7 @@ function openPsalmSearchScore(folder,file){
  renderHymnPage();showControls(false);
 }
 function showPsalmSearch(){
+ updatePsalmSearchDefault();
  openMainPanel('psalmSearchPanel');setMainTab('mainTabPsalm');
  renderPsalmSearch();if(!psalmSearchLoaded)loadPsalmSearchManifest();
 }
@@ -2749,6 +2769,7 @@ async function loadPsalmSearchManifest(){
    if(event.origin!==allowedOrigin && event.origin!==allowedGoogleusercontent && !event.origin.endsWith('.googleusercontent.com'))return;
    const msg=event.data;
    if(!msg||msg.channel!=='PUNGMU_ACCOMP_V1'||msg.type!=='RESULT')return;
+   applyPsalmManagePermission(msg.canManagePsalm===true);
    applyVerifiedAccompMassPermission(msg.authorized===true);
  });
  window.addEventListener('load',requestPermission);
@@ -2840,7 +2861,7 @@ async function toggleFavorite(n){
   favoriteStatus(`${n}번 성가 ${desired?'즐겨찾기 등록':'즐겨찾기 해제'} 완료`);
  }catch(e){
   if(desired)favoriteNumbers.delete(n);else favoriteNumbers.add(n);
-  favoriteStatus('즐겨찾기 저장 실패: '+(e.message||e));
+  favoriteStatus('즐겨찾기 저장 실패. 다시 시도해 주세요.');
  }finally{favoriteBusy.delete(n);refreshFavoriteResults();}
 }
 let favoriteChecking=false;
@@ -2858,7 +2879,7 @@ async function loadFavorites(){
   document.getElementById('favTabs').hidden=false;
   favoriteStatus('');
   refreshFavoriteResults();
- }catch(e){favoriteStatus('즐겨찾기 연결 오류: '+(e?.message||String(e)));document.getElementById('favRetry').style.display='block';}
+ }catch(e){favoriteStatus('즐겨찾기 연결 오류. 다시 시도해 주세요.');document.getElementById('favRetry').style.display='block';}
  finally{favoriteChecking=false;}
 }
 const originalFavoriteSearch=search;
