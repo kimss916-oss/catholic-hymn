@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.105-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.106-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1009,6 +1009,11 @@ header p{color:#d6eae3 !important;}
 }
 
 .hymn-note-card{margin-top:10px;padding:10px 12px;border:1px solid #d5d8dc;border-radius:10px;background:#fff;color:#182033;overflow-wrap:anywhere}.hymn-note-text{white-space:pre-wrap}.hymn-note-card small{display:block;color:#64748b;margin-bottom:4px}.hymn-note-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.hymn-note-actions button{border:1px solid #08705b;color:#075c4e;background:#fff;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.hymn-edit-field textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;resize:vertical}.special-view .special-song-row{display:flex!important;align-items:center!important;gap:10px!important}.special-view .special-song-row>b{flex:0 0 76px}.special-view .special-song-row>div{flex:1;flex-wrap:wrap}
+
+/* V3.23.106: date card action row; note remains last */
+#monthList .month-card .day-card-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 10px;}
+#monthList .month-card .day-card-actions button{flex:0 1 auto;min-width:0;white-space:nowrap;margin:0;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.25;}
+@media(max-width:380px){#monthList .month-card .day-card-actions{gap:4px}#monthList .month-card .day-card-actions button{padding:7px 5px;font-size:12px}}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1106,7 +1111,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.105-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.106-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -2142,8 +2147,10 @@ function openNoteScore105(id,lang){
 function dayCard(d){
  const has=['입당','봉헌','성체','파견'].some(k=>(d.songs[k]||[]).length)||d.봉헌텍스트;
  const sunday=isMassDay(d),mode=futureMassMode[d.date]||'';
- const actions=sunday?`<div class="today-mass-actions future-mass-actions"><button class="${mode==='mass'?'active':''}" onclick="toggleFutureMass('${d.date}','mass')">${mode==='mass'?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${mode==='accomp'?'active':''}" onclick="toggleFutureMass('${d.date}','accomp')">${mode==='accomp'?'반주용 닫기':'반주용 미사곡'}</button>`:''}</div>`:'';
- return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div>${hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:''}</div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}${hymnNoteMarkup(d['비고'])}</div>`;
+ const edit=hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:'';
+ const massActions=sunday?`<button class="${mode==='mass'?'active':''}" onclick="toggleFutureMass('${d.date}','mass')">${mode==='mass'?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${mode==='accomp'?'active':''}" onclick="toggleFutureMass('${d.date}','accomp')">${mode==='accomp'?'반주용 닫기':'반주용 미사곡'}</button>`:''}`:'';
+ const actions=(massActions||edit)?`<div class="today-mass-actions day-card-actions">${massActions}${edit}</div>`:'';
+ return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div></div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}${hymnNoteMarkup(d['비고'])}</div>`;
 }
 
 // V3.23.27: 사용자가 현재 표시된 미사곡 번호를 본당 확정 번호로 확인함.
