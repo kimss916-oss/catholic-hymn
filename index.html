@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.103-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.104-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1103,7 +1103,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.103-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.104-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -2303,7 +2303,19 @@ function setMainTab(activeId){
  const active=document.getElementById(activeId);
  if(active) active.classList.add('active');
 }
-let scheduleViewYear=2026, scheduleViewMonth=11;
+const scheduleNow = new Date();
+let scheduleViewYear=scheduleNow.getFullYear(), scheduleViewMonth=scheduleNow.getMonth()+1;
+function initScheduleYearOptions(){
+ const ys=document.getElementById('scheduleYear');
+ const current=new Date().getFullYear();
+ const first=Math.min(2025,current);
+ ys.replaceChildren(...Array.from({length:current+2-first},(_,i)=>new Option((first+i)+'년',String(first+i))));
+ ys.value=String(scheduleViewYear);
+ document.getElementById('scheduleMonth').value=String(scheduleViewMonth);
+}
+initScheduleYearOptions();
+function archiveEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function archiveOffertory(nums,info){return [nums,info].filter(v=>String(v??'').trim()).map(v=>archiveEscape(songText(v))).join(' · ')||'-';}
 let showPastCurrentMonth=false;
 let pastPreviewDay=null;
 function selectPastScheduleDay(day){pastPreviewDay=day;massSongsVisible=false;accompMassOpen=false;renderArchiveMonth();document.getElementById("pastDayPreview")?.scrollIntoView({block:"start",behavior:"smooth"});}
@@ -2317,7 +2329,7 @@ function pastCurrentMonthRows(){
 function renderPastCurrentMonth(){
  const rows=pastCurrentMonthRows();
  const box=document.getElementById("archiveScheduleBox");
- box.innerHTML=`<div class="archive-month-head"><b>${monthlyData.year}년 ${monthlyData.month}월 지난 성가표</b><span>${rows.length}개 지난 일정 · 날짜를 눌러 악보 확인</span></div>`+(pastPreviewDay!==null?`<div id="pastDayPreview"><button type="button" class="past-preview-close" onclick="closePastScheduleDay()">← 지난 성가표 목록으로</button>${todayMarkup(rows.find(x=>x.day===pastPreviewDay)||rows[0],true)}</div>`:``)+(rows.length?rows.map(d=>`<div class="archive-day"><div class="archive-day-top"><button type="button" class="past-date-open" onclick="selectPastScheduleDay(${d.day})">${monthlyData.month}/${d.day} ${d.weekday||""} · 악보 보기</button><span>${d.liturgy||""}</span></div><div class="archive-songs">${["입당","봉헌","성체","파견"].map(k=>`<div class="archive-slot"><small>${k}</small><b>${songText((d.songs&&d.songs[k]||[]).join(","))}</b></div>`).join("")}</div></div>`).join(""):`<div class="archive-empty">지난 성가 일정이 없습니다.</div>`);
+ box.innerHTML=`<div class="archive-month-head"><b>${monthlyData.year}년 ${monthlyData.month}월 지난 성가표</b><span>${rows.length}개 지난 일정 · 날짜를 눌러 악보 확인</span></div>`+(pastPreviewDay!==null?`<div id="pastDayPreview"><button type="button" class="past-preview-close" onclick="closePastScheduleDay()">← 지난 성가표 목록으로</button>${todayMarkup(rows.find(x=>x.day===pastPreviewDay)||rows[0],true)}</div>`:``)+(rows.length?rows.map(d=>`<div class="archive-day"><div class="archive-day-top"><button type="button" class="past-date-open" onclick="selectPastScheduleDay(${d.day})">${monthlyData.month}/${d.day} ${d.weekday||""} · 악보 보기</button><span>${d.liturgy||""}</span></div><div class="archive-songs">${["입당","봉헌","성체","파견"].map(k=>`<div class="archive-slot"><small>${k}</small><b>${k==="봉헌"?archiveOffertory((d.songs&&d.songs[k]||[]).join(","),d.봉헌텍스트):songText((d.songs&&d.songs[k]||[]).join(","))}</b></div>`).join("")}</div></div>`).join(""):`<div class="archive-empty">지난 성가 일정이 없습니다.</div>`);
 }
 function getMonthPack(y,m){
  if(typeof monthlyData!=='undefined' && Number(monthlyData.year)===y && Number(monthlyData.month)===m) return monthlyData;
@@ -2350,22 +2362,22 @@ function renderArchiveMonth(){
  if(!pack){box.innerHTML=`<div class="archive-month-head"><b>${y}년 ${m}월 성가표</b></div><div class="archive-empty">등록된 성가표가 없습니다.</div>`;return;}
  box.innerHTML=`<div class="archive-month-head"><b>${y}년 ${m}월 성가표</b><span>${pack.days.length}개 일정</span></div>`+
  pack.days.map(r=>`<div class="archive-day">
-   <div class="archive-day-top"><strong>${r.date||''}</strong><span>${r.liturgy||''}</span></div>
+   <div class="archive-day-top"><strong>${archiveEscape(r.date)}</strong><span>${archiveEscape(r.liturgy)}</span></div>
    <div class="archive-songs">
     <div class="archive-slot"><small>입당</small><b>${songText(r.entrance)}</b></div>
-    <div class="archive-slot"><small>봉헌</small><b>${songText(r.offertory)}</b></div>
+    <div class="archive-slot"><small>봉헌</small><b>${archiveOffertory(r.offertory,r.offertoryText)}</b></div>
     <div class="archive-slot"><small>성체</small><b>${songText(r.communion)}</b></div>
     <div class="archive-slot"><small>파견</small><b>${songText(r.recessional)}</b></div>
-   </div></div>`).join('');
+   </div>${r.note?`<div class="note">${archiveEscape(r.note)}</div>`:''}</div>`).join('');
 }
 function jumpScheduleMonth(){showPastCurrentMonth=false;pastPreviewDay=null;renderArchiveMonth();loadHymnScheduleMonth(Number(document.getElementById('scheduleYear').value),Number(document.getElementById('scheduleMonth').value));}
 function moveScheduleMonth(delta){
  let y=Number(document.getElementById('scheduleYear').value),m=Number(document.getElementById('scheduleMonth').value)+delta;
  if(m<1){m=12;y--} if(m>12){m=1;y++}
- // 현재 보유 범위는 2026년. 향후 다른 연도 데이터가 들어오면 option 자동 추가 가능.
+ // 선택 가능한 연도 범위 내에서 이동
  const ys=document.getElementById('scheduleYear');
  if(![...ys.options].some(o=>Number(o.value)===y)){ return; }
- ys.value=y;document.getElementById('scheduleMonth').value=m;showPastCurrentMonth=false;renderArchiveMonth();loadHymnScheduleMonth(y,m);
+ ys.value=y;document.getElementById('scheduleMonth').value=m;showPastCurrentMonth=false;pastPreviewDay=null;renderArchiveMonth();loadHymnScheduleMonth(y,m);
 }
 let statsType='all';
 const statRoleLabels={entrance:'입당',offertory:'봉헌',communion:'성체',recessional:'파견'};
@@ -2566,7 +2578,7 @@ function applyHymnScheduleRemote(y,m,days){
       const parsed=normalizeHymnRemoteDay(d);
       return {date:parsed.date,liturgy:parsed.liturgy,
         entrance:parsed.songs['입당'].join(','),offertory:parsed.songs['봉헌'].join(','),
-        communion:parsed.songs['성체'].join(','),recessional:parsed.songs['파견'].join(',')};
+        communion:parsed.songs['성체'].join(','),recessional:parsed.songs['파견'].join(','),offertoryText:parsed['봉헌텍스트'],note:parsed['비고']};
     })};
     const i=monthlyArchive.findIndex(p=>Number(p.year)===y&&Number(p.month)===m);
     if(i>=0)monthlyArchive[i]=pack;else monthlyArchive.push(pack);
@@ -2600,6 +2612,7 @@ async function loadHymnScheduleMonth(y,m){
 }
 window.addEventListener('load',()=>{
   loadHymnScheduleMonth(Number(monthlyData.year),Number(monthlyData.month));
+  loadHymnScheduleMonth(scheduleViewYear,scheduleViewMonth);
   // 이전 월 데이터는 통계에도 쓰이므로 비동기로 갱신한다.
   monthlyArchive.forEach(p=>loadHymnScheduleMonth(Number(p.year),Number(p.month)));
 });
