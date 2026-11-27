@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta name="color-scheme" content="light">
-<meta charset="utf-8"><meta name="app-build" content="V3.23.104-TEST">
+<meta charset="utf-8"><meta name="app-build" content="V3.23.105-TEST">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>가톨릭 성가</title>
 <style>
@@ -1007,6 +1007,8 @@ header p{color:#d6eae3 !important;}
 .viewer.open.schedule-mode:not(.fullscreen-mode):not(:fullscreen) .page-stage{bottom:0!important;}
 .viewer.open.schedule-mode .nav{display:none!important;}
 }
+
+.hymn-note-card{margin-top:10px;padding:10px 12px;border:1px solid #d5d8dc;border-radius:10px;background:#fff;color:#182033;overflow-wrap:anywhere}.hymn-note-text{white-space:pre-wrap}.hymn-note-card small{display:block;color:#64748b;margin-bottom:4px}.hymn-note-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.hymn-note-actions button{border:1px solid #08705b;color:#075c4e;background:#fff;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.hymn-edit-field textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;resize:vertical}.special-view .special-song-row{display:flex!important;align-items:center!important;gap:10px!important}.special-view .special-song-row>b{flex:0 0 76px}.special-view .special-song-row>div{flex:1;flex-wrap:wrap}
 </style></head><body><div class="app">
 <header><h1>가톨릭 성가</h1><p>성가 검색 · 악보 보기 · 반주자용 오늘의 성가</p></header>
 <main>
@@ -1064,6 +1066,7 @@ header p{color:#d6eae3 !important;}
  <label class="hymn-edit-field">봉헌<input id="hymnEditOffertory" inputmode="text" autocomplete="off"></label>
  <label class="hymn-edit-field">성체<input id="hymnEditCommunion" inputmode="text" autocomplete="off"></label>
  <label class="hymn-edit-field">파견<input id="hymnEditRecessional" inputmode="text" autocomplete="off"></label>
+ <label class="hymn-edit-field">비고<textarea id="hymnEditNote" rows="3" maxlength="1000"></textarea></label>
  <p>여러 곡은 쉼표로 구분합니다. 예: 210, 211<br>변경 내용은 해당 날짜에만 저장됩니다.</p><p id="hymnEditStatus" role="status" aria-live="polite"></p>
  <div class="hymn-edit-actions"><button type="button" onclick="closeHymnEdit()">닫기</button><button type="button" id="hymnEditSaveButton" onclick="saveHymnEdit()">저장</button></div>
  </div></div>
@@ -1103,7 +1106,7 @@ header p{color:#d6eae3 !important;}
   </div>
   <div id="statsHistory" class="stats-history" style="display:none"></div>
 </div>
-<footer class="app-version-footer" aria-label="앱 버전">V3.23.104-TEST</footer>
+<footer class="app-version-footer" aria-label="앱 버전">V3.23.105-TEST</footer>
 </section>
 <section id="viewer" class="viewer">
 <div class="toolbar"><button id="viewerBackButton" onclick="returnToHolyHourOrHome();event.stopPropagation()">‹ 성가 홈</button><div id="vtitle" class="vtitle"></div><button onclick="full();event.stopPropagation()">전체화면</button></div>
@@ -1228,7 +1231,7 @@ function hymnImageError(img){
  img.style.display='none';
  if(!imageErrorShown){
    imageErrorShown=true;
-   folderHelp.innerHTML='<b>악보를 불러오지 못했습니다</b><p>'+ (activePsalmScore?'GitHub의 화답송 파일 경로와 파일명을 확인해 주세요.':'배포 서버의 hymns 폴더와 WebP 파일을 확인해 주세요.') +'</p>';
+   folderHelp.innerHTML='<b>악보를 불러오지 못했습니다</b><p>'+ (activePsalmScore&&!activePsalmScore.pages[0].startsWith('hymns/')?'GitHub의 화답송 파일 경로와 파일명을 확인해 주세요.':'배포 서버의 hymns 폴더와 WebP 파일을 확인해 주세요.') +'</p>';
    folderHelp.classList.add('show');
    showControls(true);
  }
@@ -2077,7 +2080,7 @@ async function refreshHymnEditAccess(){
   const r=await hymnEditRequest('HYMN_EDIT_ACCESS');
   hymnEditAccess=r.ok&&r.canEdit?{canEdit:true,full:r.full===true,today:r.today||''}:{canEdit:false,full:false,today:''};
  }catch(_){hymnEditAccess={canEdit:false,full:false,today:''};}
- renderMonthList();
+ renderMonthList();renderTodayHighlight();
 }
 window.addEventListener('load',()=>{if(window.parent!==window)setTimeout(refreshHymnEditAccess,500);});
 function hymnEditStatus(message){document.getElementById('hymnEditStatus').textContent=message||'';}
@@ -2094,8 +2097,8 @@ async function openHymnEdit(date){
   if(!r.ok||!r.row)throw new Error(r.message||'조회 실패');
   if(hymnEditCurrentDate!==date)return;
   const d=r.row;
-  hymnEditExpected={ENTRANCE:d.ENTRANCE||'',OFFERTORY:d.OFFERTORY||'',COMMUNION:d.COMMUNION||'',RECESSIONAL:d.RECESSIONAL||''};
-  for(const [id,key] of [['hymnEditEntrance','ENTRANCE'],['hymnEditOffertory','OFFERTORY'],['hymnEditCommunion','COMMUNION'],['hymnEditRecessional','RECESSIONAL']])document.getElementById(id).value=d[key]||'';
+  hymnEditExpected={ENTRANCE:d.ENTRANCE||'',OFFERTORY:d.OFFERTORY||'',COMMUNION:d.COMMUNION||'',RECESSIONAL:d.RECESSIONAL||'',NOTE:d.NOTE||''};
+  for(const [id,key] of [['hymnEditEntrance','ENTRANCE'],['hymnEditOffertory','OFFERTORY'],['hymnEditCommunion','COMMUNION'],['hymnEditRecessional','RECESSIONAL'],['hymnEditNote','NOTE']])document.getElementById(id).value=d[key]||'';
   document.getElementById('hymnEditInfo').textContent=d.LITURGY||'';
   document.getElementById('hymnEditSaveButton').disabled=false;
  }catch(e){hymnEditStatus('조회 실패. 다시 시도해 주세요.');}
@@ -2105,25 +2108,42 @@ function closeHymnEdit(){document.getElementById('hymnEditModal').hidden=true;hy
 async function saveHymnEdit(){
  const date=hymnEditCurrentDate;
  if(!date||!hymnEditExpected||!hymnEditAllowed(date)||hymnEditLoading)return;
- const changes={ENTRANCE:document.getElementById('hymnEditEntrance').value,OFFERTORY:document.getElementById('hymnEditOffertory').value,COMMUNION:document.getElementById('hymnEditCommunion').value,RECESSIONAL:document.getElementById('hymnEditRecessional').value};
- for(const [k,v] of Object.entries(changes))if(v.trim()&&!/^\d{1,3}(\s*,\s*\d{1,3})*$/.test(v.trim())){hymnEditStatus(k+' 성가번호를 쉼표로 구분해 입력해 주세요.');return;}
+ const changes={ENTRANCE:document.getElementById('hymnEditEntrance').value,OFFERTORY:document.getElementById('hymnEditOffertory').value,COMMUNION:document.getElementById('hymnEditCommunion').value,RECESSIONAL:document.getElementById('hymnEditRecessional').value,NOTE:document.getElementById('hymnEditNote').value};
+ for(const [k,v] of Object.entries(changes))if(k!=='NOTE'&&v.trim()&&!/^\d{1,3}(\s*,\s*\d{1,3})*$/.test(v.trim())){hymnEditStatus(k+' 성가번호를 쉼표로 구분해 입력해 주세요.');return;}
+ if(changes.NOTE.length>1000||/^[=+@]/.test(changes.NOTE.trim())){hymnEditStatus('비고 입력값을 확인해 주세요.');return;}
  if(!confirm(date+' 성가표를 저장하시겠습니까?'))return;
  hymnEditLoading=true;document.getElementById('hymnEditSaveButton').disabled=true;hymnEditStatus('저장 중…');
  try{
   const r=await hymnEditRequest('HYMN_EDIT_SAVE',{date,changes,expected:hymnEditExpected},45000);
   if(!r.ok)throw new Error(r.message||'저장 실패');
   // 저장 결과는 서버 원본 재조회로 확인하며, 원격 월 캐시를 비워 즉시 갱신한다.
+  const pending=hymnScheduleRequests.get(monthlyData.year+'-'+monthlyData.month);if(pending)await pending;
   hymnScheduleLoaded.delete(monthlyData.year+'-'+monthlyData.month);
   await loadHymnScheduleMonth(monthlyData.year,monthlyData.month);
+  if(!hymnScheduleLoaded.has(monthlyData.year+'-'+monthlyData.month)){closeHymnEdit();alert('저장은 완료되었으나 화면 갱신에 실패했습니다. 다시 열어 주세요.');return;}
   if(hymnEditCurrentDate===date){closeHymnEdit();alert(r.changed?'성가표가 저장되었습니다.':'변경된 내용이 없습니다.');}
  }catch(e){hymnEditStatus('저장 실패. 다시 시도해 주세요.');}
  finally{hymnEditLoading=false;document.getElementById('hymnEditSaveButton').disabled=!hymnEditExpected;}
+}
+const NOTE_SCORES_105=[{id:'pater_noster',title:'Pater Noster',pattern:/pater\s*noster|빠떼르\s*노스떼르/i},{id:'salve_regina',title:'Salve Regina',pattern:/salve\s*regina|살베\s*레지나/i}];
+function hymnNoteMarkup(value){
+ const note=String(value??'').trim();if(!note)return '';
+ const matches=NOTE_SCORES_105.filter(x=>x.pattern.test(note));
+ return `<div class="hymn-note-card"><small>비고</small><div class="hymn-note-text">${archiveEscape(note)}</div>${matches.map(x=>`<div class="hymn-note-actions">${['la','ko'].map(lang=>`<button type="button" onclick="openNoteScore105('${x.id}','${lang}')">${matches.length>1?x.title+' ':''}${lang==='la'?'원어':'한글'} 악보</button>`).join('')}</div>`).join('')}</div>`;
+}
+function openNoteScore105(id,lang){
+ const score=NOTE_SCORES_105.find(x=>x.id===id);if(!score||!['la','ko'].includes(lang))return;
+ if(!viewer.classList.contains('open'))returnScrollY=window.scrollY||0;
+ activePsalmScore={title:score.title+' · '+(lang==='la'?'원어':'한글'),pages:['hymns/'+id+'_'+lang+'.webp']};
+ currentPage=0;viewerSource='schedule';viewerSequence=[];viewerSeqIndex=-1;
+ home.classList.add('hidden');viewer.classList.add('open','schedule-mode');viewer.classList.remove('fullscreen-mode');
+ document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';renderHymnPage();showControls(false);syncFullscreenButton();
 }
 function dayCard(d){
  const has=['입당','봉헌','성체','파견'].some(k=>(d.songs[k]||[]).length)||d.봉헌텍스트;
  const sunday=isMassDay(d),mode=futureMassMode[d.date]||'';
  const actions=sunday?`<div class="today-mass-actions future-mass-actions"><button class="${mode==='mass'?'active':''}" onclick="toggleFutureMass('${d.date}','mass')">${mode==='mass'?'미사곡 닫기':'미사곡 보기'}</button>${accompMassAuthorized?`<button class="${mode==='accomp'?'active':''}" onclick="toggleFutureMass('${d.date}','accomp')">${mode==='accomp'?'반주용 닫기':'반주용 미사곡'}</button>`:''}</div>`:'';
- return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div>${hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:''}</div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}</div>`;
+ return `<div class="month-card ${d.weekday==='주일'?'sunday':''}"><div class="month-head"><div class="date-badge">${monthlyData.month}/${d.day} ${d.weekday}</div><div class="liturgy">${d.liturgy||' '}</div>${hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:''}</div>${actions}${has?`<div class="song-grid">${songBoxes(d)}</div>`:'<div class="note">지정 성가 없음</div>'}${futureMassRows(d,mode)}${hymnNoteMarkup(d['비고'])}</div>`;
 }
 
 // V3.23.27: 사용자가 현재 표시된 미사곡 번호를 본당 확정 번호로 확인함.
@@ -2232,7 +2252,7 @@ function todayIntegratedSongBoxes(d){
 }
 function todayMarkup(d,preview=false){
  const heading=preview?'지난 성가표 · '+monthlyData.month+'/'+d.day+' '+d.weekday:'오늘의 성가 · '+monthlyData.month+'/'+d.day+' '+d.weekday;
- return `<div class="today-highlight"><h3>${heading}</h3><p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions">${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}<button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div></div>`;
+ return `<div class="today-highlight"><h3>${heading}</h3>${hymnEditAllowed(d.date)?`<button type="button" class="hymn-edit-trigger" onclick="openHymnEdit('${d.date}')">수정</button>`:''}<p>${d.liturgy||''}</p>${isMassDay(d)?`<div class="today-mass-actions">${accompMassAuthorized?`<button class="${accompMassOpen?'active':''}" onclick="toggleAccompMassSongs()">반주용 미사곡</button>`:''}<button class="${massSongsVisible?'active':''}" onclick="toggleMassSongs()">${massSongsVisible?'미사곡 닫기':'미사곡 보기'}</button></div>`:''}<div class="song-grid">${todayIntegratedSongBoxes(d)}</div>${hymnNoteMarkup(d['비고'])}</div>`;
 }
 function renderTodayHighlight(){
  const now=new Date(); let d=null;
@@ -2243,12 +2263,12 @@ function renderTodayHighlight(){
 function setMonthView(v){monthView=v;document.querySelectorAll('.view-filter button').forEach(b=>b.classList.remove('active'));const ids={sunday:'viewSunday',all:'viewAll',funeral:'viewFuneral',holyhour:'viewHolyHour',mass:'viewMass'};const btn=document.getElementById(ids[v]);if(btn)btn.classList.add('active');renderMonthList()}
 const specialSongSets={
  funeral:{title:'장례 성가',note:'장례 미사와 고별식에 사용하는 성가 모음입니다.',rows:[['입당',[520]],['화답송',[54]],['봉헌',[210]],['성체',[151,188]],['고별식',[469]],['파견',[227]]]},
- holyhour:{title:'성시간',note:'성시간에 사용하는 성가 모음입니다.',rows:[['시작',[205]],['분향',[203]],['분향',[193]],['마침',[200]]]}
+ holyhour:{title:'성시간',note:'성시간에 사용하는 성가 모음입니다.',rows:[['시작',[205]],['분향',[203,193]],['마침',[200]]]}
 };
 function renderSpecialSongs(type){
  const set=specialSongSets[type], list=document.getElementById('monthList'); if(!set||!list)return;
  list.innerHTML=`<div class="special-view"><h3>${set.title}</h3><p>${set.note}</p><div class="special-song-list">${
- set.rows.map(([label,nums])=>`<div class="special-song-row"><b>${label}</b><div>${
+ set.rows.map(([label,nums])=>`<div class="special-song-row"><b>${label} :</b><div>${
  nums.map(n=>hymns[n]?`<button class="song-link" onclick="openScheduleHymn(${n},[${nums.join(',')}])">${n}</button>`:'').join('')
  }</div></div>`).join('')
  }</div></div>`;
@@ -2272,7 +2292,7 @@ function renderMonthList(){if(monthView==='mass'){renderMassSongList();return;}i
  if(monthView==='today'){days=(now.getFullYear()===monthlyData.year&&now.getMonth()+1===monthlyData.month)?days.filter(d=>d.day===now.getDate()):[]}
  if(monthView==='sunday')days=days.filter(d=>d.weekday==='주일');
  if((monthView==='all'||monthView==='sunday')&&now.getFullYear()===monthlyData.year&&now.getMonth()+1===monthlyData.month)days=days.filter(d=>d.day>now.getDate());
- monthList.innerHTML=(days.length?days.map(dayCard).join(''):'<div class="note">해당 날짜의 성가표가 없습니다.</div>')+(monthView==='all'?renderSpecial():'');
+ monthList.innerHTML=(days.length?days.map(dayCard).join(''):'<div class="note">해당 날짜의 성가표가 없습니다.</div>');
 }
 function renderMonth(){renderTodayHighlight();renderMonthList();verifyPsalmAssets();refreshPsalmButtons();}
 function renderSpecial(){return Object.entries(monthlyData.special).map(([name,obj])=>`<div class="special-card"><h3>${name}</h3>${Object.entries(obj).map(([k,a])=>`<div class="special-row"><b>${k}</b>　${a.map(n=>`<button class="song-link" onclick="openHymn(${n},0,'schedule',${JSON.stringify(a)})">${n}</button>`).join(' ')}</div>`).join('')}</div>`).join('')}
@@ -2329,7 +2349,7 @@ function pastCurrentMonthRows(){
 function renderPastCurrentMonth(){
  const rows=pastCurrentMonthRows();
  const box=document.getElementById("archiveScheduleBox");
- box.innerHTML=`<div class="archive-month-head"><b>${monthlyData.year}년 ${monthlyData.month}월 지난 성가표</b><span>${rows.length}개 지난 일정 · 날짜를 눌러 악보 확인</span></div>`+(pastPreviewDay!==null?`<div id="pastDayPreview"><button type="button" class="past-preview-close" onclick="closePastScheduleDay()">← 지난 성가표 목록으로</button>${todayMarkup(rows.find(x=>x.day===pastPreviewDay)||rows[0],true)}</div>`:``)+(rows.length?rows.map(d=>`<div class="archive-day"><div class="archive-day-top"><button type="button" class="past-date-open" onclick="selectPastScheduleDay(${d.day})">${monthlyData.month}/${d.day} ${d.weekday||""} · 악보 보기</button><span>${d.liturgy||""}</span></div><div class="archive-songs">${["입당","봉헌","성체","파견"].map(k=>`<div class="archive-slot"><small>${k}</small><b>${k==="봉헌"?archiveOffertory((d.songs&&d.songs[k]||[]).join(","),d.봉헌텍스트):songText((d.songs&&d.songs[k]||[]).join(","))}</b></div>`).join("")}</div></div>`).join(""):`<div class="archive-empty">지난 성가 일정이 없습니다.</div>`);
+ box.innerHTML=`<div class="archive-month-head"><b>${monthlyData.year}년 ${monthlyData.month}월 지난 성가표</b><span>${rows.length}개 지난 일정 · 날짜를 눌러 악보 확인</span></div>`+(pastPreviewDay!==null?`<div id="pastDayPreview"><button type="button" class="past-preview-close" onclick="closePastScheduleDay()">← 지난 성가표 목록으로</button>${todayMarkup(rows.find(x=>x.day===pastPreviewDay)||rows[0],true)}</div>`:``)+(rows.length?rows.map(d=>`<div class="archive-day"><div class="archive-day-top"><button type="button" class="past-date-open" onclick="selectPastScheduleDay(${d.day})">${monthlyData.month}/${d.day} ${d.weekday||""} · 악보 보기</button><span>${d.liturgy||""}</span></div><div class="archive-songs">${["입당","봉헌","성체","파견"].map(k=>`<div class="archive-slot"><small>${k}</small><b>${k==="봉헌"?archiveOffertory((d.songs&&d.songs[k]||[]).join(","),d.봉헌텍스트):songText((d.songs&&d.songs[k]||[]).join(","))}</b></div>`).join("")}</div>${hymnNoteMarkup(d["비고"])}</div>`).join(""):`<div class="archive-empty">지난 성가 일정이 없습니다.</div>`);
 }
 function getMonthPack(y,m){
  if(typeof monthlyData!=='undefined' && Number(monthlyData.year)===y && Number(monthlyData.month)===m) return monthlyData;
@@ -2368,7 +2388,7 @@ function renderArchiveMonth(){
     <div class="archive-slot"><small>봉헌</small><b>${archiveOffertory(r.offertory,r.offertoryText)}</b></div>
     <div class="archive-slot"><small>성체</small><b>${songText(r.communion)}</b></div>
     <div class="archive-slot"><small>파견</small><b>${songText(r.recessional)}</b></div>
-   </div>${r.note?`<div class="note">${archiveEscape(r.note)}</div>`:''}</div>`).join('');
+   </div>${hymnNoteMarkup(r.note)}</div>`).join('');
 }
 function jumpScheduleMonth(){showPastCurrentMonth=false;pastPreviewDay=null;renderArchiveMonth();loadHymnScheduleMonth(Number(document.getElementById('scheduleYear').value),Number(document.getElementById('scheduleMonth').value));}
 function moveScheduleMonth(delta){
